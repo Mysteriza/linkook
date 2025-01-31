@@ -1,0 +1,229 @@
+{   
+    "About Me": {
+        "mainUrl": "https://about.me",
+        "profileUrl": "https://about.me/^USER^",
+        "keyword": {
+            "notMatch": ["Sorry, we couldn't find that page"]
+        }
+    },
+    "allmylinks": {
+        "mainUrl": "https://allmylinks.com",
+        "profileUrl": "https://allmylinks.com/^USER^",
+        "keyword": {
+            "notMatch": ["This page is missing"]
+        },
+        "isConnected": true
+    },
+    "Buy Me a Coffee": {
+        "mainUrl": "https://buymeacoffee.com",
+        "profileUrl": "https://buymeacoffee.com/^USER^",
+        "keyword": {
+            "notMatch": ["This page is missing"]
+        },
+        "hasEmail": false,
+        "isConnected": true
+    },
+    "LinkedIn": {
+        "mainUrl": "https://www.linkedin.com",
+        "profileUrl": "https://www.linkedin.com/in/^USER^",
+        "regexUrl": "https://(?:www|in).linkedin.com/in/^USER^",
+        "keyword": {
+            "notMatch": ["Profile not found"]
+        },
+        "isUserId": true
+    },
+    "Linktree": {
+        "mainUrl": "https://linktr.ee",
+        "profileUrl": "https://linktr.ee/^USER^",
+        "keyword": {
+            "notMatch": ["This page is missing"]
+        },
+        "isConnected": true
+    },
+    "GitHub": {
+        "mainUrl": "https://github.com",
+        "profileUrl": "https://github.com/^USER^",
+        "keyword": {
+            "Match": ["followers", "following"]
+        },
+        "isConnected": true
+    },
+    "GitLab": {
+        "mainUrl": "https://gitlab.com",
+        "profileUrl": "https://gitlab.com/^USER^",
+        "keyword": {
+            "Match": ["Personal projects"]
+        }
+    },
+    "Mastodon": {
+        "mainUrl": "https://mastodon.social",
+        "profileUrl": "https://mastodon.social/@^USER^",
+        "keyword": {
+            "notMatch": ["The user could not be found"]
+        }
+    },
+    "Medium": {
+        "mainUrl": "https://medium.com",
+        "profileUrl": "https://medium.com/@^USER^",
+        "keyword": {
+            "notMatch": ["Sorry, this page isn't available"]
+        }
+    },
+    "TikTok": {
+        "mainUrl": "https://tiktok.com",
+        "profileUrl": "https://tiktok.com/@^USER^",
+        "keyword": {
+            "notMatch": ["This page isn't available"]
+        }
+    },
+    "Instagram": {
+        "mainUrl": "https://instagram.com",
+        "profileUrl": "https://instagram.com/^USER^",
+        "regexUrl": "https://(?:www.|mobile.)?instagram.com/^USER^",
+        "keyword": {
+            "notMatch": ["Page Not Found"]
+        }
+    },
+    "Facebook": {
+        "mainUrl": "https://facebook.com",
+        "profileUrl": "https://facebook.com/^USER^",
+        "keyword": {
+            "notMatch": ["Sorry, this content isn't available right now"]
+        }
+    },
+    "Reddit": {
+        "mainUrl": "https://reddit.com",
+        "profileUrl": "https://reddit.com/user/^USER^",
+        "regexUrl": "https://(?:www.|old.)?reddit.com/user/^USER^",
+        "keyword": {
+            "notMatch": ["page not found"]
+        },
+        "hasEmail": false,
+        "isConnected": true
+    },
+    "X(Twitter)": {
+        "mainUrl": "https://x.com",
+        "profileUrl": "https://x.com/^USER^",
+        "regexUrl": "https://(?:www.|mobile.)?(?:twitter|x).com/^USER^",
+        "keyword": {
+            "Match": ["followers", "following"]
+        }
+    },
+    "Snapchat": {
+        "mainUrl": "https://snapchat.com",
+        "profileUrl": "https://snapchat.com/add/^USER^",
+        "keyword": {
+            "notMatch": ["Sorry! This user doesn't exist."]
+        }
+    },
+    "Twitch": {
+        "mainUrl": "https://twitch.tv",
+        "profileUrl": "https://twitch.tv/^USER^",
+        "keyword": {
+            "notMatch": ["Sorry. Unless you've got a time machine, that content is unavailable."]
+        }
+    },
+    "Fosstodon": {
+        "mainUrl": "https://fosstodon.org",
+        "profileUrl": "https://fosstodon.org/@^USER^",
+        "keyword": {
+            "notMatch": ["The user could not be found"]
+        }
+    },
+    "YouTube": {
+        "mainUrl": "https://youtube.com",
+        "profileUrl": "https://youtube.com/user/^USER^",
+        "regexUrl": "https://(?:www.|m.)?youtube.com/(?:user/|channel/|@)^USER^",
+        "keyword": {
+            "notMatch": ["This channel does not exist."]
+        }
+    },
+    "Bugcrowd": {
+        "mainUrl": "https://bugcrowd.com",
+        "profileUrl": "https://bugcrowd.com/^USER^",
+        "keyword": {
+            "notMatch": ["Resource not found"]
+        },
+        "isConnected": true
+    },
+    "HackerOne": {
+        "mainUrl": "https://hackerone.com",
+        "profileUrl": "https://hackerone.com/^USER^",
+        "queryUrl": "https://hackerone.com/graphql",
+        "keyword": {
+            "notMatch": ["User does not exist"]
+        },
+        "request_method": "POST",
+        "headers": {
+        "Content-Type": "application/json"
+        },
+        "request_payload": {
+        "operationName":"UserProfilePage","variables":{"resourceIdentifier":"^USER^"},"query":"query UserProfilePage($resourceIdentifier: String!) {\n\n  user(username: $resourceIdentifier) {\n    id\n    username\n    name\n    ...UserProfileCardUser\n  }\n}\n\n\n\nfragment UserProfileCardUser on User {\n  id\n  location\n  website\n  bio\n  bugcrowd_handle\n  hack_the_box_handle\n  github_handle\n  gitlab_handle\n  linkedin_handle\n  twitter_handle\n}\n\n\n\n"
+        },
+        "isConnected": true,
+        "handle_regex" : {
+            "Bugcrowd": "bugcrowd_handle\":\"([^\"]+)",
+            "GitHub": "github_handle\":\"([^\"]+)",
+            "GitLab": "gitlab_handle\":\"([^\"]+)",
+            "LinkedIn": "linkedin_handle\":\"([^\"]+)",
+            "X(Twitter)": "twitter_handle\":\"([^\"]+)",
+            "Hack The Box": "hack_the_box_handle\":\"([^\"]+)"
+        }
+    },
+    "Hack The Box": {
+        "mainUrl": "https://app.hackthebox.com",
+        "profileUrl": "https://app.hackthebox.com/profile/^USER^",
+        "queryUrl": "https://labs.hackthebox.com/api/v4/profile/^USER^",
+        "regexUrl": "https://app.hackthebox.(?:eu|com)/(?:profile|users)/^USER^",
+        "keyword": {
+            "notMatch": ["User not found"]
+        },
+        "handle_regex" : {
+            "GitHub": "github\":\"https:\\\\/\\\\/github.com\\\\/([^\"]+)",
+            "LinkedIn": "linkedin\":\"https:\\\\/\\\\/linkedin.com\\\\/in\\\\/([^\"]+)",
+            "X(Twitter)": "twitter\":\"https:\\\\/\\\\/twitter.com\\\\/([^\"]+)"
+        },
+        "isConnected": true,
+        "isUserId": true
+    },
+    "PentesterLab": {
+        "mainUrl": "https://pentesterlab.com",
+        "profileUrl": "https://pentesterlab.com/profile/^USER^",
+        "isUserId": true
+    },
+    "Spotify": {
+        "mainUrl": "https://open.spotify.com",
+        "profileUrl": "https://open.spotify.com/user/^USER^",
+        "regexUrl": "https://open.spotify.com/(?:intl-[a-z]{2}/)?(?:artist|user)/^USER^",
+        "isUserId": true
+    },
+    "SoundCloud": {
+        "mainUrl": "https://soundcloud.com",
+        "profileUrl": "https://soundcloud.com/^USER^",
+        "keyword": {
+            "notMatch": ["Sorry, we can't find that user."]
+        }
+    },
+    "Keybase": {
+        "mainUrl": "https://keybase.io",
+        "profileUrl": "https://keybase.io/^USER^",
+        "keyword": {
+            "notMatch": ["No such user"]
+        }
+    },
+    "Duolingo": {
+        "mainUrl": "https://duolingo.com",
+        "profileUrl": "https://duolingo.com/profile/^USER^",
+        "keyword": {
+            "notMatch": ["the page you were looking for doesn’t exist"]
+        }
+    },
+    "Apple Music": {
+        "mainUrl": "https://music.apple.com",
+        "profileUrl": "https://music.apple.com/profile/^USER^",
+        "regexUrl": "https://music.apple.com/(?:[a-z]{2}/)?(?:artist|profile)/^USER^",
+        "keyword": {
+            "notMatch": ["This user doesn't exist"]
+        }
+    }
+}

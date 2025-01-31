@@ -1,0 +1,29 @@
+
+# testing
+tests/
+
+results/
+
+backup/
+
+build/
+
+venv/
+
+# cache
+__pycache__/
+
+# IDE
+.vscode/
+
+# other
+*.log
+*.tmp
+.env
+*.egg-info/
+
+# macos
+.DS_Store
+
+# neo4j json
+neo4j_export.json
