@@ -92,13 +92,21 @@ RETURN nodesCreated, relsCreated;
 ### 其他选项
 
 **`--help`**: 显示帮助信息。
+
 **`--slient`**: 禁用所有输出，仅显示摘要。
+
 **`--scan-all`**: 扫描 provider.json 中全部可用站点。如果未指定，则仅扫描标有 `isConnected` 为 true 的站点。
+
 **`--print-all`**: 输出用户名不存在的站点信息。
+
 **`--no-color`**: 输出中不使用颜色。
+
 **`--browse`**: 在默认浏览器中打开所有已发现的个人资料链接。
+
 **`--debug`**: 启用调试级别日志并详细输出。
+
 **`--output`**: 指定保存结果的目录。默认值为 `results`。
+
 **`--local`**: 强制使用本地的 provider.json 文件，并可添加自定义路径。默认值为 `provider.json`。
 
 ## 对比 Sherlock
