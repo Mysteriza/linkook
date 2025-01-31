@@ -19,7 +19,7 @@ class ProviderManager:
 
     def __init__(
         self,
-        remote_json_url: str = "https://example.com/provider.json",  # TODO Replace it
+        remote_json_url: str = "https://raw.githubusercontent.com/JackJuly/linkook/refs/heads/main/linkook/provider/provider.json",
         local_json_path: str = "linkook/provider/provider.json",
         force_local: bool = False,
         timeout: int = 10,
