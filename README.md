@@ -85,20 +85,28 @@ CALL {
 RETURN nodesCreated, relsCreated;
 ```
 
-可使用`MATCH (n) RETURN n`查看所有结果及关联情况
+You can use `MATCH (n) RETURN n` to view all results and their connections.
 
 ![Screenshot](images/04.png)
 
 ### Other Options
 
 **`--help`**: show help message.
+
 **`--slient`**: Suppress all output and only show summary.
+
 **`--scan-all`**: Scan all available sites in the provider.json file. If not set, only scan sites with `isConnected` set to true.
+
 **`--print-all`**: Output sites where the username was not found.
+
 **`--no-color`**: Output without color.
+
 **`--browse`**: Browse to all found profiles in the default browser.
+
 **`--debug`**: Enable verbose logging for debugging.
+
 **`--output`**: Directory to save the results. Default is `results`.
+
 **`--local`**: Force the use of the local provider.json file, add a custom path if needed. Default is `provider.json`.
 
 ## Comparison with Sherlock
