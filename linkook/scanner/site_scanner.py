@@ -155,6 +155,7 @@ class SiteScanner:
                     f"User not found based on Match keywords for provider: {provider.name}"
                 )
                 return result
+        return result
 
     def fetch_user_profile(
         self, user: str

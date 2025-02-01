@@ -66,15 +66,12 @@
         "mainUrl": "https://medium.com",
         "profileUrl": "https://medium.com/@^USER^",
         "keyword": {
-            "notMatch": ["Sorry, this page isn't available"]
+            "notMatch": ["Out of nothing, something."]
         }
     },
     "TikTok": {
         "mainUrl": "https://tiktok.com",
-        "profileUrl": "https://tiktok.com/@^USER^",
-        "keyword": {
-            "notMatch": ["This page isn't available"]
-        }
+        "profileUrl": "https://tiktok.com/@^USER^"
     },
     "Instagram": {
         "mainUrl": "https://instagram.com",
@@ -96,7 +93,7 @@
         "profileUrl": "https://reddit.com/user/^USER^",
         "regexUrl": "https://(?:www.|old.)?reddit.com/user/^USER^",
         "keyword": {
-            "notMatch": ["page not found"]
+            "notMatch": ["Sorry, nobody on Reddit goes by that name."]
         },
         "hasEmail": false,
         "isConnected": true
@@ -120,7 +117,7 @@
         "mainUrl": "https://twitch.tv",
         "profileUrl": "https://twitch.tv/^USER^",
         "keyword": {
-            "notMatch": ["Sorry. Unless you've got a time machine, that content is unavailable."]
+            "notMatch": ["<meta property='og:description' content='Twitch is the world&#39;s leading video platform and community for gamers.'>"]
         }
     },
     "Fosstodon": {
@@ -214,16 +211,42 @@
     "Duolingo": {
         "mainUrl": "https://duolingo.com",
         "profileUrl": "https://duolingo.com/profile/^USER^",
+        "queryUrl": "https://www.duolingo.com/2017-06-30/users?username=^USER^",
         "keyword": {
-            "notMatch": ["the page you were looking for doesn’t exist"]
+            "notMatch": ["{\"users\":[]}"]
         }
     },
     "Apple Music": {
         "mainUrl": "https://music.apple.com",
         "profileUrl": "https://music.apple.com/profile/^USER^",
-        "regexUrl": "https://music.apple.com/(?:[a-z]{2}/)?(?:artist|profile)/^USER^",
+        "regexUrl": "https://music.apple.com/(?:[a-z]{2}/)?(?:artist|profile)/^USER^"
+    },
+    "Apple Developer": {
+        "mainUrl": "https://developer.apple.com",
+        "profileUrl": "https://developer.apple.com/forums/profile/^USER^",
         "keyword": {
-            "notMatch": ["This user doesn't exist"]
+            "notMatch": ["The page you’re looking for can’t be found"]
+        }
+    },
+    "Apple Discussions": {
+        "mainUrl": "https://discussions.apple.com",
+        "profileUrl": "https://discussions.apple.com/profile/^USER^",
+        "keyword": {
+            "notMatch": ["The page you tried was not found. You may have used an outdated link or may have typed the address (URL) incorrectly."]
+        }
+    },
+    "Telegram": {
+        "mainUrl": "https://t.me",
+        "profileUrl": "https://t.me/^USER^",
+        "keyword": {
+            "Match": ["If you have <strong>Telegram</strong>, you can contact"]
+        }
+    },
+    "HackerNews": {
+        "mainUrl": "https://news.ycombinator.com",
+        "profileUrl": "https://news.ycombinator.com/user?id=^USER^",
+        "keyword": {
+            "notMatch": ["No such user."]
         }
     }
 }
