@@ -26,7 +26,7 @@ class ConsolePrinter:
         self,
         debug: bool = False,
         print_all: bool = False,
-        slient: bool = False,
+        silent: bool = False,
         concise: bool = False,
         browse: bool = False,
     ):
@@ -35,13 +35,13 @@ class ConsolePrinter:
 
         :param debug: If True, print detailed debugging information.
         :param print_all: If True, print all results, including not found.
-        :param slient: If True, print minimal output.
+        :param silent: If True, print minimal output.
         :param concise: If True, print concise output.
         :param browse: If True, trigger browsing to found profiles (implementation needed).
         """
         self.debug = debug
         self.print_all = print_all
-        self.slient = slient
+        self.silent = silent
         self.concise = concise
         self.browse = browse
         self.current_username: Optional[str] = None
@@ -73,7 +73,7 @@ v1.0.0                                                     - by @JackJu1y
 
     def start_other_links(self):
 
-        if self.slient:
+        if self.silent:
             return
         print("-" * 55)
         print(f"{Fore.YELLOW}Scanning for connected links...{Style.RESET_ALL}")

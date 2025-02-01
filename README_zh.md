@@ -93,7 +93,7 @@ RETURN nodesCreated, relsCreated;
 
 **`--help`**: 显示帮助信息。
 
-**`--slient`**: 禁用所有输出，仅显示摘要。
+**`--silent`**: 禁用所有输出，仅显示摘要。
 
 **`--scan-all`**: 扫描 provider.json 中全部可用站点。如果未指定，则仅扫描标有 `isConnected` 为 true 的站点。
 
@@ -111,15 +111,21 @@ RETURN nodesCreated, relsCreated;
 
 ## 对比 Sherlock
 
-[Sherlock](https://github.com/sherlock-project/sherlock) 是一个基于用户名搜索社交平台账号的工具,本项目也受 Sherlock 启发进行开发。Sherlock 仅仅只针对已知的用户名进行各平台检索，如果同一个用户在不同平台的用户名有差异，Sherlock 不能全面搜索到，也会出现搜索出的账号属于多个不同用户的情况。
+[Sherlock](https://github.com/sherlock-project/sherlock) 是一个优秀的工具，可以基于用户名查找社交媒体账号，本项目（Linkook）也受到其启发。但 Sherlock 存在一些局限性：
 
-Linkook 工具则可从基于用户名搜索到的社交账号中进一步**搜索关联的**其他社交账号（其可能使用了不同的用户名），并递归搜索关联账号，最终可以更全面地收集到用户的信息。
+- 仅在各个平台上搜索相同的用户名。
+- 如果用户在不同平台使用不同的用户名，可能会遗漏账号。
+- 如果多个无关用户共享相同的用户名，可能会错误地包含这些账号。
 
-Linkook 还支持将数据导入 neo4j，**可视化**展示用户名、账号、邮箱，通过查看不同节点之间的关联强度，可以判断用户真实的社交账号信息，排除非关联账号。
+相比之下，**Linkook** 能够更进一步：
+
+- **递归搜索** 每个已发现的社交账号的**关联账号**，即使使用不同的用户名也能识别。
+- 提供更全面的用户在线信息视图，包括邮箱信息等。
+- 支持将扫描结果导出为 **Neo4j 兼容的 JSON 格式** 进行**可视化**，方便分析用户名、账号和邮箱之间的关联，筛选出真正相关的账号并过滤无关信息。
 
 ## 贡献文档
 
-请具体查看 [CONTRIBUTING.md](CONTRIBUTING.md) 文档
+`Linkook`的工作方式及如何贡献，请参考[CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 支持作者
 

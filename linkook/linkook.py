@@ -49,7 +49,7 @@ def parse_arguments() -> argparse.Namespace:
         "--concise", "-c", action="store_true", help="Print more concise results."
     )
     parser.add_argument(
-        "--slient",
+        "--silent",
         "-s",
         action="store_true",
         help="Suppress all output and only show summary.",
@@ -192,7 +192,7 @@ def scan_queue(
         scan_result = scanner.deep_scan(user)
 
         # Notify results to console
-        if not args.slient:
+        if not args.silent:
             console_printer.update(
                 {
                     "site_name": provider_name,
@@ -260,7 +260,7 @@ def main():
     console_printer = ConsolePrinter(
         debug=args.debug,
         print_all=args.print_all,
-        slient=args.slient,
+        silent=args.silent,
         concise=args.concise,
         browse=args.browse,
     )
@@ -297,7 +297,7 @@ def main():
         "found_emails": scanner.found_emails,
     }
 
-    if args.slient:
+    if args.silent:
         args.show_summary = True
 
     console_printer.finish_all(print_content, args.show_summary)

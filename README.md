@@ -11,7 +11,7 @@ English | [中文](README_zh.md)
 - Search social media accounts across multiple platforms based on a given username.
 - Further retrieve interlinked social accounts, usernames, emails, and more.
 - Use HudsonRock's Cybercrime Intelligence Database to check if related emails have been affected by cybercrime or info-stealer infections.
-- Support exporting scan results to a Neo4j-friendly JSON format, allowing visualization of social accounts, usernames, emails, and their interconnect relationships in Neo4j.
+- Support exporting scan results to a Neo4j-friendly JSON format, enabling visual analysis in Neo4j.
 
 ## Installation
 
@@ -93,7 +93,7 @@ You can use `MATCH (n) RETURN n` to view all results and their connections.
 
 **`--help`**: show help message.
 
-**`--slient`**: Suppress all output and only show summary.
+**`--silent`**: Suppress all output and only show summary.
 
 **`--scan-all`**: Scan all available sites in the provider.json file. If not set, only scan sites with `isConnected` set to true.
 
@@ -111,15 +111,21 @@ You can use `MATCH (n) RETURN n` to view all results and their connections.
 
 ## Comparison with Sherlock
 
-[Sherlock](https://github.com/sherlock-project/sherlock) is a tool that finds social media accounts based on a specific username, and this project (Linkook) was partly inspired by it. However, Sherlock only checks each platform for that same username. If the same person uses different usernames on different platforms, Sherlock cannot thoroughly locate them. It may also detect accounts belonging to multiple unrelated individuals if they happen to share the searched username.
+[Sherlock](https://github.com/sherlock-project/sherlock) is a great tool that finds social media accounts based on usernames, and this project (Linkook) was partly inspired by it.But Sherlock has some limitations.
 
-In contrast, Linkook can go one step further: from each discovered social account, it can continue searching other **linked** accounts even if they use different usernames and perform these lookups recursively to build a more comprehensive view of the user.
+- Only searches for the same username on each platform.
+- May miss accounts if a user uses different usernames across platforms.
+- Can mistakenly include accounts from unrelated users if they share the searched username.
 
-Additionally, Linkook supports exporting this data into Neo4j for **visualization**, making it easier to see associations between usernames, accounts, and emails. By examining these connections, you can better identify a user’s genuine social media presence and filter out unconnected accounts.
+In contrast, **Linkook** can go one step further:
+
+- **Recursively searches** for **linked** accounts from each discovered social account—even if different usernames are used.
+- Provides a more comprehensive view of the user’s online presence like email infos.
+- Supports exporting scan results into a Neo4j-friendly JSON format for **visualization**, making it easier to analyze associations between usernames, accounts, and emails to filter out unconnected accounts.
 
 ## Contributing
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) document for more details.
+For details on how `Linkook` works and how to contribute, please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ## Support
 
