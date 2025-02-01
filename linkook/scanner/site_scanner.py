@@ -42,7 +42,8 @@ class SiteScanner:
         profile_url = provider.build_url(user)
 
         if profile_url in self.visited_urls:
-            return {}
+            logging.debug(f"URL {profile_url} already visited")
+            return result
         self.visited_urls.add(profile_url)
 
         result["profile_url"] = profile_url

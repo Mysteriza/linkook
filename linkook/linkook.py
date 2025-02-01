@@ -214,7 +214,7 @@ def scan_queue(
                 logging.debug(f"Provider {provider_name} not found")
                 continue
             if not provider.is_connected:
-                logging.debug(f"Provider {provider_name} is not connected")
+                logging.debug(f"Provider {provider_name} has no connection")
                 continue
             if not provider.keyword:
                 logging.debug(f"Provider {provider_name} has no keywords configured")
