@@ -9,17 +9,17 @@ body:
         Include the site name in the title.
   - type: dropdown
     id: type
-      attributes:
-        label: Type
-        description: What type of issue is this?
-        options:
-          - Request new sites
-          - False positive
-          - False negative
-          - Update existing sites info
-        default: 0
-      validations:
-        required: true
+    attributes:
+      label: Type
+      description: What type of issue is this?
+      options:
+        - Request new sites
+        - False positive
+        - False negative
+        - Update existing sites info
+      default: 0
+    validations:
+      required: true
   - type: input
     id: site-url
     attributes:
