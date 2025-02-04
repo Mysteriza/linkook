@@ -23,22 +23,32 @@
 git clone https://github.com/JackJuly/linkook
 cd linkook
 ```
-2. 安装 `Linkook`
+
+2. 直接运行 `Linkook`
+
+```shell
+python -m linkook {username}
+```
+
+3. 或安装 `Linkook`
+
 ```shell
 python setup.py install
 ```
+
 或使用 `pip`
+
 ```shell
 pip install .
 ```
 
+然后运行
+
+```shell
+linkook {username}
+```
+
 ## 使用说明
-
-### 基本使用
-
-```
-linkook <username>
-```
 
 ### `--show-summary`
 
@@ -72,7 +82,7 @@ Breached Emails: breached@mail.com
 
 在 neo4j 中，使用**APOC**插件将 JSON 数据导入。以下为导入数据的**Cypher**代码，运行成功后会返回导入节点数和导入关系数。
 
-```
+```cypher
 CALL apoc.load.json("file:///neo4j_export.json") YIELD value
 CALL {
   WITH value

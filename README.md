@@ -16,28 +16,39 @@ English | [中文](README_zh.md)
 ## Installation
 
 Use the following commands to install.
+
 1. Download this repo
 
 ```shell
 git clone https://github.com/JackJuly/linkook
 cd linkook
 ```
-2. Install `Linkook`
+
+2. Run `Linkook` directly
+
+```shell
+python -m linkook {username}
+```
+
+3. Or you can install `Linkook`
+
 ```shell
 python setup.py install
 ```
-or
+
+or use `pip`
+
 ```shell
 pip install .
 ```
 
-## Usage
-
-### Basic
+then run
 
 ```shell
-linkook <username>
+linkook {username}
 ```
+
+## Usage
 
 ### `--show-summary`
 
