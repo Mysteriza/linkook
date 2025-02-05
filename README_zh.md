@@ -44,13 +44,7 @@ python -m linkook {username}
 python setup.py install
 ```
 
-或使用 `pip`
-
-```shell
-pip install .
-```
-
-然后运行
+### 运行 Linkook
 
 ```shell
 linkook {username}
