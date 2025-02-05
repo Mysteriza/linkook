@@ -15,7 +15,15 @@ English | [中文](README_zh.md)
 
 ## Installation
 
-Use the following commands to install.
+```shell
+pipx install linkook
+```
+
+or use `pip` instead of `pipx`
+
+### Install manually
+
+You can also use the following commands to install it manually.
 
 1. Download this repo
 
@@ -24,7 +32,7 @@ git clone https://github.com/JackJuly/linkook
 cd linkook
 ```
 
-2. Run `Linkook` directly
+2. You can run `Linkook` directly
 
 ```shell
 python -m linkook {username}
