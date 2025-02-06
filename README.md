@@ -8,10 +8,10 @@ English | [中文](README_zh.md)
 
 **Main Features**
 
-- Search social media accounts across multiple platforms based on a given username.
-- Further retrieve interlinked social accounts, usernames, emails, and more.
-- Use HudsonRock's Cybercrime Intelligence Database to check if related emails have been affected by cybercrime or info-stealer infections.
-- Support exporting scan results to a Neo4j-friendly JSON format, enabling visual analysis in Neo4j.
+- Search social media accounts across **multiple platforms** based on a given username.
+- Further retrieve **interlinked** social accounts, usernames, emails, and more.
+- Use **HudsonRock's Cybercrime Intelligence Database** to check if related emails have been affected by cybercrime or info-stealer infections.
+- Support exporting scan results to a Neo4j-friendly JSON format, enabling visual analysis in **Neo4j**.
 
 ## Installation
 
