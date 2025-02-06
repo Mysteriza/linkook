@@ -6,7 +6,7 @@ English | [中文](README_zh.md)
 
 ![Screenshot](images/01.png)
 
-**Main Features**
+### Main Features
 
 - Search social media accounts across **multiple platforms** based on a given username.
 - Further retrieve **interlinked** social accounts, usernames, emails, and more.
