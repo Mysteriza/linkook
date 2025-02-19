@@ -16,17 +16,18 @@ class SiteScanner:
         self.timeout = timeout
         self.proxy = proxy
         self.all_providers = {}  # Dictionary of all providers
-        self.current_provider = None  # Current provider
         self.to_scan = {}  # Dictionary of providers to scan
         self.visited_urls = set()  # Set of visited URLs
         self.found_accounts = {}  # Dictionary of found accounts
         self.found_usernames = set()  # Set of found usernames
         self.found_emails = set()  # Set of found emails
+        self.found_passwords = set()  # Set of found passwords
         self.check_breach = False  # Flag to check Hudson Rock breach
+        self.hibp_key = None  # HaveIBeenPwned API key
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
-    def deep_scan(self, user: str) -> dict:
+    def deep_scan(self, user: str, current_provider: Provider) -> dict:
 
         result: Dict[str, Any] = {
             "found": False,
@@ -37,7 +38,7 @@ class SiteScanner:
             "error": None,
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         profile_url = provider.build_url(user)
 
@@ -48,8 +49,8 @@ class SiteScanner:
 
         result["profile_url"] = profile_url
 
-        status_code, html_content = self.fetch_user_profile(user)
-        check_res = self.check_availability(status_code, html_content)
+        status_code, html_content = self.fetch_user_profile(user, provider)
+        check_res = self.check_availability(status_code, html_content, provider)
 
         result["found"] = check_res["found"]
         result["error"] = check_res["error"]
@@ -60,20 +61,24 @@ class SiteScanner:
         if not check_res["found"]:
             return result
 
-        search_res = self.search_in_response(html_content)
+        search_res = self.search_in_response(html_content, provider)
 
         result["other_links"] = search_res["other_links"]
         result["other_usernames"] = search_res["other_usernames"]
         result["infos"] = search_res["infos"]
 
         self.found_usernames.update(result["other_usernames"])
-        found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
-        self.found_emails.update(found_email_tuple)
+        if result["infos"]["emails"]:
+            found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
+            self.found_emails.update(found_email_tuple)
+
+        if result["infos"]["passwords"]:
+            found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
+            self.found_passwords.update(found_pass_tuple)
 
         if provider.name not in self.found_accounts:
             self.found_accounts[provider.name] = set()
         self.found_accounts[provider.name].add(profile_url)
-        logging.debug(f"Updated found accounts: {self.found_accounts}")
 
         for pname, urls in result["other_links"].items():
             provider = self.all_providers.get(pname)
@@ -88,11 +93,10 @@ class SiteScanner:
                 username = provider.extract_user(url).pop()
                 url = provider.build_url(username)
                 self.found_accounts[pname].add(urls)
-        logging.debug(f"Updated found accounts: {self.found_accounts}")
 
         return result
 
-    def check_availability(self, status_code: int, html_content: str) -> dict:
+    def check_availability(self, status_code: int, html_content: str, current_provider: Provider) -> dict:
         """
         This method checks if a given username is available on a specific provider.
         """
@@ -102,7 +106,7 @@ class SiteScanner:
             "error": None,
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         # Check status code
 
@@ -159,7 +163,7 @@ class SiteScanner:
         return result
 
     def fetch_user_profile(
-        self, user: str
+        self, user: str, current_provider: Provider
     ) -> Tuple[Optional[int], Optional[str], list]:
         """
         Overrides the base method to return status_code, HTML content, and redirect history.
@@ -169,7 +173,7 @@ class SiteScanner:
         :return: A tuple (status_code, html_content, redirect_history).
         """
 
-        provider = self.current_provider
+        provider = current_provider
         method = provider.request_method or "GET"
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
@@ -211,15 +215,18 @@ class SiteScanner:
             logging.error(f"Failed to fetch profile page for URL {url}: {e}")
             return None, None
 
-    def search_in_response(self, html: str) -> bool:
+    def search_in_response(self, html: str, current_provider: Provider) -> bool:
 
         result: Dict[str, Any] = {
             "other_links": {},
             "other_usernames": set(),
-            "infos": {"emails": {}},
+            "infos": {
+                "emails": {},
+                "passwords": {}
+                },
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         if not provider.is_connected:
             return result
@@ -227,8 +234,18 @@ class SiteScanner:
         if provider.has_email:
             emails_set = self.search_info(html)["emails"]
             for email in emails_set:
+                if email in self.found_emails:
+                    result["infos"]["emails"][email] = self.found_emails[email]
+
                 if self.check_breach:
-                    result["infos"]["emails"][email] = self.check_HudsonRock(email)
+                    if self.hibp_key is not None:
+                        result["infos"]["emails"][email] = self.check_HaveIBeenPwned(email)
+                    else:
+                        result["infos"]["emails"][email] = self.check_HudsonRock(email)
+                    if result["infos"]["emails"][email] == True:
+                        check_pass = self.check_ProxyNova(email)
+                        if check_pass is not None:
+                            result["infos"]["passwords"][email] = check_pass
                 else:
                     result["infos"]["emails"][email] = False
 
@@ -258,18 +275,12 @@ class SiteScanner:
                 p for pname, p in self.all_providers.items() if pname != provider.name
             ]
 
-        logging.debug(
-            f"Searching for links from {provs_to_search}, total: {len(provs_to_search)}"
-        )
-
         result["other_links"] = self.search_new_links(html, provs_to_search)
 
         other_usernames_set = self.search_new_usernames(html, provs_to_search)
 
         result["other_usernames"].update(other_usernames_set)
 
-        logging.debug(f"Discovered links: {result['other_links']}")
-        logging.debug(f"Discovered usernames: {result['other_usernames']}")
 
         return result
 
@@ -317,6 +328,28 @@ class SiteScanner:
             result["emails"].update(matches)
         return result
 
+    def check_HaveIBeenPwned(self, email: str) -> bool:
+        """
+        Check if the user's data has been leaked in the HaveIBeenPwned database.
+        """
+        url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}"
+        headers = {
+            "hibp-api-key": self.hibp_key,
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
+        }
+        try:
+            res = requests.get(url, headers=headers, timeout=5)
+        except requests.exceptions.RequestException:
+            return False
+        status_code = res.status_code
+        if status_code is None:
+            return False
+        if status_code == 404:
+            return False
+        if status_code == 200:
+            return True
+        return False
+
     def check_HudsonRock(self, email: str) -> bool:
         """
         Check if the user's data has been leaked in the Hudson Rock database.
@@ -324,16 +357,45 @@ class SiteScanner:
         url = f"https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-email?email={email}"
         associated_string = "This email address is associated with a computer that was infected by an info-stealer, all the credentials saved on this computer are at risk of being accessed by cybercriminals. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
         not_associated_string = "This email address is not associated with a computer infected by an info-stealer. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
-        res = requests.get(url)
+        try:
+            res = requests.get(url, timeout=5)
+        except requests.exceptions.RequestException:
+            return False
         status_code = res.status_code
-        json_content = res.json()
         if status_code is None:
             return False
         if status_code == 404:
             return False
         if status_code == 200:
+            json_content = res.json()
             if json_content["message"] == associated_string:
                 return True
             elif json_content["message"] == not_associated_string:
                 return False
         return False
+
+    def check_ProxyNova(self, email: str) -> List[str]:
+        """
+        Check ProxyNova for leaked credentials.
+        """
+        url = f"https://api.proxynova.com/comb?query={email}"
+        try:
+            res = requests.get(url, timeout=5)
+        except requests.exceptions.RequestException:
+            return None
+        if res.status_code is None or res.status_code == 404:
+            return None
+        if res.status_code == 200:
+            json_content = res.json()
+            lines = json_content.get("lines", [])
+            password_set = set()
+            prefix = f"{email}:"
+            for line in lines:
+                if line.startswith(prefix):
+                    parts = line.split(":", 1)  
+                    if len(parts) == 2:
+                        pass_part = parts[1].strip()
+                        if pass_part:
+                            password_set.add(pass_part)
+            return list(password_set)
+        return None
