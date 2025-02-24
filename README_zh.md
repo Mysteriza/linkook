@@ -71,12 +71,18 @@ linkook {username}
 ```
 ...
 Found Emails: notbreached@mail.com, breached@mail.com(breach detected)
+Leaked Passwords:
++ breached@mail.com: password123
 ...
 ...
 ========================= Scan Summary =========================
 ...
-Breached Emails: breached@mail.com
+Breached Emails: breached@mail.com(password123)
 ```
+
+### `--hibp`
+
+使用 **Have I Been Pwned** API 替代 HudsonRock's Database 进行信息泄露查询。在初次使用时，需要提供 API（要求有 HIBP 订阅），API key 将保存在本地`~/.hibp.key`。
 
 ### `--neo4j`
 
@@ -129,6 +135,8 @@ RETURN nodesCreated, relsCreated;
 **`--output`**: 指定保存结果的目录。默认值为 `results`。
 
 **`--local`**: 强制使用本地的 provider.json 文件，并可添加自定义路径。默认值为 `provider.json`。
+
+**`--version` & `--update`**: 查看版本信息，直接使用`pipx`进行更新。
 
 ## 对比 Sherlock
 

@@ -71,12 +71,18 @@ Use HudsonRock's Cybercrime Intelligence Database to check whether the discovere
 ```
 ...
 Found Emails: notbreached@mail.com, breached@mail.com(breach detected)
+Leaked Passwords:
++ breached@mail.com: password123
 ...
 ...
 ========================= Scan Summary =========================
 ...
-Breached Emails: breached@mail.com
+Breached Emails: breached@mail.com(password123)
 ```
+
+### `--hibp`
+
+Use the **Have I Been Pwned** API instead of HudsonRock’s Database for breach information checks. When using it for the first time, you need to provide an API key (requiring a HIBP subscription). The API key will be saved locally in `~/.hibp.key`.
 
 ### `--neo4j`
 
@@ -129,6 +135,8 @@ You can use `MATCH (n) RETURN n` to view all results and their connections.
 **`--output`**: Directory to save the results. Default is `results`.
 
 **`--local`**: Force the use of the local provider.json file, add a custom path if needed. Default is `provider.json`.
+
+**`--version` & `--update`**: View version information and update directly using `pipx`.
 
 ## Comparison with Sherlock
 
