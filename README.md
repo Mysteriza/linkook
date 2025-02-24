@@ -122,7 +122,7 @@ You can use `MATCH (n) RETURN n` to view all results and their connections.
 
 **`--silent`**: Suppress all output and only show summary.
 
-**`--scan-all`**: Scan all available sites in the provider.json file. If not set, only scan sites with `isConnected` set to true.
+**`--scan-all`**: Scan all available sites in `provider.json`. If not set, only scan sites with `isConnected` set to **True**.
 
 **`--print-all`**: Output sites where the username was not found.
 
