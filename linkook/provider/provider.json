@@ -90,7 +90,6 @@
         "mainUrl": "https://www.threads.net/",
         "profileUrl": "https://www.threads.net/@^USER^",
         "keyword": {
-            "notMatch": ["Sorry, this page isn't available.", "The link you followed may be broken, or the page may have been removed."],
             "Match": ["followers", "Mention"]
         }
     },
@@ -117,8 +116,8 @@
         "mainUrl": "https://x.com",
         "profileUrl": "https://x.com/^USER^",
         "regexUrl": "https://(?:www.|mobile.)?(?:twitter|x).com/^USER^",
+        "queryUrl": "https://nitter.privacydev.net/^USER^",
         "keyword": {
-            "notMatch": ["This account doesn’t exist", "Try searching for another"],
             "Match": ["followers", "following"]
         }
     },
@@ -260,7 +259,7 @@
         "mainUrl": "https://t.me",
         "profileUrl": "https://t.me/^USER^",
         "keyword": {
-            "Match": ["If you have <strong>Telegram</strong>, you can contact"]
+            "Match": ["View in Telegram"]
         }
     },
     "HackerNews": {
@@ -292,8 +291,7 @@
         "profileUrl": "https://www.pinterest.com/^USER^",
         "regexUrl": "https://(?:id.|www.)?pinterest.com/^USER^",
         "keyword": {
-            "notMatch": ["We can't find that idea!"],
-            "Match": ["Saved", "following", "Created"]
+            "Match": [" - Profile | Pinterest"]
         }
     },
     "Behance": {
@@ -456,8 +454,9 @@
     "Codeforces": {
         "mainUrl": "https://codeforces.com",
         "profileUrl": "https://codeforces.com/profile/^USER^",
+        "queryUrl": "https://codeforces.com/api/user.info?handles=^USER^",
         "keyword": {
-            "notMatch": ["Ciao, Codeforces!"]
+            "Match": ["result"]
         }
     },
     "LeetCode": {
