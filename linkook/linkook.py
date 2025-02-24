@@ -223,8 +223,12 @@ def check_update(verbose: bool) -> bool:
                 print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
             return True
     except importlib.metadata.PackageNotFoundError:
-        print(f"{Fore.MAGENTA}Cannot detect current version. Attempting to upgrade anyway.{Style.RESET_ALL}")
-        return True
+        if verbose:
+            print(f"{Fore.MAGENTA}\rCannot detect current version. Attempting to upgrade anyway.{Style.RESET_ALL}")
+            return True
+        else:
+            print(f"{Fore.MAGENTA}\rCannot detect current version.{Style.RESET_ALL}")
+            return False
 
 
 def update_tool():
@@ -265,11 +269,11 @@ def get_hibp_key():
                 elif status is None:
                     return None
             else:
-                print("[!] The stored 'Have I Been Pwned' API key is empty.")
+                print(f"\r{Fore.YELLOW}The stored 'Have I Been Pwned' API key is empty.{Style.RESET_ALL}")
 
-    hibp_key = getpass.getpass("[*] Please enter your 'Have I Been Pwned' API key (Input Hidden): ")
+    hibp_key = getpass.getpass(f"\r{Fore.CYAN}Please enter your 'Have I Been Pwned' API key (Input Hidden): {Style.RESET_ALL}")
     if not hibp_key:
-        print("[X] No API key provided. Exiting.")
+        print(f"{Fore.RED}No API key provided. Exiting.{Style.RESET_ALL}")
         sys.exit(1)
     status = check_hibp_key(hibp_key)
     if status is False:
@@ -278,7 +282,7 @@ def get_hibp_key():
         return None
     with open(hibp_key_path, "w") as f:
         f.write(hibp_key.strip())
-        print(f"[*] HIBP API key saved to {hibp_key_path}")
+        print(f"{Fore.CYAN}HIBP API key saved to {hibp_key_path}{Style.RESET_ALL}")
 
     return hibp_key
 
