@@ -154,7 +154,7 @@ RETURN nodesCreated, relsCreated;
 
 ## 贡献文档
 
-`Linkook`的工作方式及如何贡献，请参考[CONTRIBUTING.md](CONTRIBUTING.md)
+`Linkook`的工作方式及如何贡献，请参考[CONTRIBUTING.md](.github/CONTRIBUTING.md)
 
 ## 支持作者
 

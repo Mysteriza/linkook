@@ -154,7 +154,7 @@ In contrast, **Linkook** can go one step further:
 
 ## Contributing
 
-For details on how `Linkook` works and how to contribute, please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+For details on how `Linkook` works and how to contribute, please refer to [CONTRIBUTING.md](.github/CONTRIBUTING.md) for more details.
 
 ## Support
 
