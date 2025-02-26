@@ -159,3 +159,7 @@ For details on how `Linkook` works and how to contribute, please refer to [CONTR
 ## Support
 
 [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/ju1y)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=JackJuly/linkook&type=Date)](https://star-history.com/#JackJuly/linkook&Date)
