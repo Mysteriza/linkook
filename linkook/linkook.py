@@ -416,6 +416,7 @@ def main():
         "found_usernames": scanner.found_usernames,
         "found_emails": scanner.found_emails,
         "found_passwords": scanner.found_passwords,
+        "breach_count": scanner.breach_count,
     }
 
     if args.silent:

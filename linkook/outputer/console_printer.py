@@ -56,7 +56,7 @@ class ConsolePrinter:
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
 
-v1.1.0                                                     - by @JackJu1y
+v1.1.2                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
 
@@ -123,6 +123,7 @@ v1.1.0                                                     - by @JackJu1y
                 )
 
             emails = infos.get("emails", {})
+            breach_count = infos.get("breach_count", {})
             if emails:
                 if not self.concise:
                     message = "Found Emails:"
@@ -132,9 +133,15 @@ v1.1.0                                                     - by @JackJu1y
                 for email, isbreached in emails.items():
                     if isbreached:
                         if hibp is not None:
-                            message_str.append(
-                                f"{Fore.RED}{email}(HIBP detected){Style.RESET_ALL}"
-                            )
+                            if breach_count[email] > 0:
+                                breach_count_text = f"{Fore.MAGENTA}{breach_count[email]}{Style.RESET_ALL}"
+                                message_str.append(
+                                    f"{Fore.RED}{email}(HIBP detected in {breach_count_text} {Fore.RED}breaches){Style.RESET_ALL}"
+                                )
+                            else:
+                                message_str.append(
+                                    f"{Fore.RED}{email}(HIBP detected){Style.RESET_ALL}"
+                                )
                         else:
                             message_str.append(
                                 f"{Fore.RED}{email}(Breach detected){Style.RESET_ALL}"
@@ -266,7 +273,7 @@ v1.1.0                                                     - by @JackJu1y
             if breached_emails:
                 breached_str = []
                 for email in breached_emails:
-                    if email in passwords_dict:
+                    if email in passwords_dict and passwords_dict[email]:
                         str = ", ".join(passwords_dict[email])
                         breached_str.append(f"{email}({Fore.MAGENTA}{str}{Fore.RED})")
                     else:

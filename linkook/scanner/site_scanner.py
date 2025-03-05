@@ -22,6 +22,7 @@ class SiteScanner:
         self.found_usernames = set()  # Set of found usernames
         self.found_emails = set()  # Set of found emails
         self.found_passwords = set()  # Set of found passwords
+        self.breach_count = set()  # Dictionary of breach count
         self.check_breach = False  # Flag to check Hudson Rock breach
         self.hibp_key = None  # HaveIBeenPwned API key
 
@@ -75,6 +76,10 @@ class SiteScanner:
         if result["infos"]["passwords"]:
             found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
             self.found_passwords.update(found_pass_tuple)
+
+        if result["infos"]["breach_count"]:
+            breach_count_tuple = tuple((key, value) for key, value in result["infos"]["breach_count"].items())
+            self.breach_count.update(breach_count_tuple)
 
         if provider.name not in self.found_accounts:
             self.found_accounts[provider.name] = set()
@@ -222,7 +227,8 @@ class SiteScanner:
             "other_usernames": set(),
             "infos": {
                 "emails": {},
-                "passwords": {}
+                "passwords": {},
+                "breach_count": {},
                 },
         }
 
@@ -236,18 +242,20 @@ class SiteScanner:
             for email in emails_set:
                 if email in self.found_emails:
                     result["infos"]["emails"][email] = self.found_emails[email]
-
-                if self.check_breach:
-                    if self.hibp_key is not None:
-                        result["infos"]["emails"][email] = self.check_HaveIBeenPwned(email)
-                    else:
-                        result["infos"]["emails"][email] = self.check_HudsonRock(email)
-                    if result["infos"]["emails"][email] == True:
-                        check_pass = self.check_ProxyNova(email)
-                        if check_pass is not None:
-                            result["infos"]["passwords"][email] = check_pass
                 else:
-                    result["infos"]["emails"][email] = False
+                    if self.check_breach:
+                        if self.hibp_key is not None:
+                            check_res = self.check_HaveIBeenPwned(email)
+                            result["infos"]["emails"][email] = check_res[0]
+                            result["infos"]["breach_count"][email] = check_res[1]
+                        else:
+                            result["infos"]["emails"][email] = self.check_HudsonRock(email)
+                        if result["infos"]["emails"][email] == True:
+                            check_pass = self.check_ProxyNova(email)
+                            if check_pass is not None:
+                                result["infos"]["passwords"][email] = check_pass
+                    else:
+                        result["infos"]["emails"][email] = False
 
         if provider.handle_regex:
 
@@ -328,7 +336,7 @@ class SiteScanner:
             result["emails"].update(matches)
         return result
 
-    def check_HaveIBeenPwned(self, email: str) -> bool:
+    def check_HaveIBeenPwned(self, email: str) -> Tuple[bool, int]:
         """
         Check if the user's data has been leaked in the HaveIBeenPwned database.
         """
@@ -340,15 +348,16 @@ class SiteScanner:
         try:
             res = requests.get(url, headers=headers, timeout=5)
         except requests.exceptions.RequestException:
-            return False
+            return False, 0
         status_code = res.status_code
         if status_code is None:
-            return False
+            return False, 0
         if status_code == 404:
-            return False
+            return False, 0
         if status_code == 200:
-            return True
-        return False
+            breach_count = len(res.json())
+            return True, breach_count
+        return False, 0
 
     def check_HudsonRock(self, email: str) -> bool:
         """
@@ -392,10 +401,12 @@ class SiteScanner:
             prefix = f"{email}:"
             for line in lines:
                 if line.startswith(prefix):
-                    parts = line.split(":", 1)  
+                    parts = line.split(":", 1)
                     if len(parts) == 2:
                         pass_part = parts[1].strip()
                         if pass_part:
                             password_set.add(pass_part)
-            return list(password_set)
+            if password_set:
+                return list(password_set)
+            
         return None
