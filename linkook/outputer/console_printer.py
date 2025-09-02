@@ -1,4 +1,4 @@
-# console_print.py
+# linkook/outputer/console_printer.py
 
 import logging
 import argparse
@@ -9,7 +9,6 @@ from typing import Optional, Any, Dict
 
 class CustomHelpFormatter(argparse.HelpFormatter):
     def format_help(self):
-
         description = "Linkook: Scan connected social accounts for a given username."
         usage = f"Usage: {self._prog} username [options]"
         help_text = super().format_help()
@@ -17,11 +16,6 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
 
 class ConsolePrinter:
-    """
-    ConsolePrint class handles printing scan results to the console.
-    It supports debug logging and conditional printing based on user preferences.
-    """
-
     def __init__(
         self,
         debug: bool = False,
@@ -30,15 +24,6 @@ class ConsolePrinter:
         concise: bool = False,
         browse: bool = False,
     ):
-        """
-        Initialize the ConsolePrint notifier.
-
-        :param debug: If True, print detailed debugging information.
-        :param print_all: If True, print all results, including not found.
-        :param silent: If True, print minimal output.
-        :param concise: If True, print concise output.
-        :param browse: If True, trigger browsing to found profiles (implementation needed).
-        """
         self.debug = debug
         self.print_all = print_all
         self.silent = silent
@@ -47,43 +32,29 @@ class ConsolePrinter:
         self.current_username: Optional[str] = None
 
     def banner(self):
-        """
-        Print the Linkook banner.
-        """
         banner = r""" __         __     __   __     __  __     ______     ______     __  __    
 /\ \       /\ \   /\ "-.\ \   /\ \/ /    /\  __ \   /\  __ \   /\ \/ /    
 \ \ \____  \ \ \  \ \ \-.  \  \ \  _"-.  \ \ \/\ \  \ \ \/\ \  \ \  _"-.  
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
 
-v1.1.2                                                     - by @JackJu1y
+v1.3.0                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
 
     def start(self, username: str):
-        """
-        Notify that scanning for a username has started.
-
-        :param username: The username being scanned.
-        """
         self.current_username = username
         print(
             f"{Fore.CYAN}\rScanning for username: {Style.BRIGHT}{username}{Style.RESET_ALL}"
         )
 
     def start_other_links(self):
-
         if self.silent:
             return
         print("-" * 55)
         print(f"{Fore.YELLOW}Scanning for connected links...{Style.RESET_ALL}")
 
     def update(self, result: Dict[str, Any]):
-        """
-        Update the scan results.
-
-        :param result: A dictionary containing scan results for a specific site.
-        """
         site = result.get("site_name", "Unknown Site")
         status = result.get("status", "UNKNOWN")
         profile_url = result.get("profile_url", "")
@@ -160,7 +131,6 @@ v1.1.2                                                     - by @JackJu1y
                     message = f"{Fore.RED}{Style.BRIGHT}[!] Passwords:{Style.RESET_ALL}"
                 message_str = []
                 for email, password in passwords.items():
-
                     password_part = f", ".join(password)
                     if not self.concise:
                         message_str.append(f"+ {email}: {Fore.MAGENTA}{password_part}{Style.RESET_ALL}")
@@ -174,9 +144,7 @@ v1.1.2                                                     - by @JackJu1y
             if other_links:
                 if not self.concise:
                     print(f"Linked Accounts:")
-
                 for provider, urls in other_links.items():
-
                     if isinstance(urls, list):
                         urls_str = ", ".join(urls)
                     else:
@@ -190,22 +158,11 @@ v1.1.2                                                     - by @JackJu1y
 
 
     def finish_username(self, username: str):
-        """
-        Notify that scanning for a specific username has finished.
-
-        :param username: The username that was scanned.
-        """
         print(
             f"\n{Fore.MAGENTA}Finished scanning for username: {username}.{Style.RESET_ALL}\n"
         )
 
     def finish_all(self, print_content: dict, print_summary: bool = False):
-        """
-        Notify that all scanning processes are complete.
-
-        :param print_content: A dictionary containing all scan results.
-        :param print_summary: If True, print a summary of the scan results.
-        """
         username = print_content.get("username")
         found_accounts = print_content.get("found_accounts", {})
         found_usernames = print_content.get("found_usernames", set())
@@ -223,7 +180,6 @@ v1.1.2                                                     - by @JackJu1y
         count_usernames = len(found_usernames)
         count_emails = len(found_emails)
         count_breached_emails = len(breached_emails)
-
         count_passwords = sum(len(passwords) for _, passwords in found_passwords)
 
         total_links_text = f"{Fore.GREEN}{Style.BRIGHT}{total_links}{Style.RESET_ALL}"
@@ -238,7 +194,6 @@ v1.1.2                                                     - by @JackJu1y
         count_passwords_text = (
             f"{Fore.RED}{Style.BRIGHT}{count_passwords}{Style.RESET_ALL}"
         )
-
         email_message = (
             f"{Fore.MAGENTA}Found {count_emails_text} {Fore.MAGENTA}related emails"
         )
@@ -274,8 +229,8 @@ v1.1.2                                                     - by @JackJu1y
                 breached_str = []
                 for email in breached_emails:
                     if email in passwords_dict and passwords_dict[email]:
-                        str = ", ".join(passwords_dict[email])
-                        breached_str.append(f"{email}({Fore.MAGENTA}{str}{Fore.RED})")
+                        str_pass = ", ".join(passwords_dict[email])
+                        breached_str.append(f"{email}({Fore.MAGENTA}{str_pass}{Fore.RED})")
                     else:
                         breached_str.append(email)
                     
@@ -296,12 +251,15 @@ v1.1.2                                                     - by @JackJu1y
             )
             print(f"{email_message}\n")
 
-    def browse_results(self, results: Dict[str, Dict[str, Any]]):
-        """
-        Browse to all found profile URLs in the default web browser.
+    def print_ai_summary(self, summary: str):
+        if self.silent:
+            return
+        print(
+            f"\n{Fore.MAGENTA}{Style.BRIGHT}====================== AI Persona Analysis ======================{Style.RESET_ALL}"
+        )
+        print(f"\n{Fore.WHITE}{summary}{Style.RESET_ALL}\n")
 
-        :param results: A dictionary containing scan results for each site.
-        """
+    def browse_results(self, results: Dict[str, Dict[str, Any]]):
         for site, data in results.items():
             if data["found"]:
                 try:

@@ -20,15 +20,11 @@ from linkook.outputer.visualize_output import Neo4jVisualizer
 from linkook.provider.provider_manager import ProviderManager
 from linkook.outputer.console_printer import CustomHelpFormatter
 from linkook.scanner.scanner_manager import ScannerManager, set_exiting
+from linkook.ai.persona_analyzer import PersonaAnalyzer
 
 PACKAGE_NAME = "linkook"
 
 def setup_logging(debug: bool):
-    """
-    Set up logging configuration.
-
-    :param debug: If True, set logging level to DEBUG; else disable logging.
-    """
     if debug:
         level = logging.DEBUG
         logging.basicConfig(
@@ -41,11 +37,6 @@ def setup_logging(debug: bool):
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    Parse command-line arguments.
-
-    :return: Parsed arguments namespace.
-    """
     parser = argparse.ArgumentParser(
         usage=argparse.SUPPRESS, formatter_class=CustomHelpFormatter
     )
@@ -88,7 +79,7 @@ def parse_arguments() -> argparse.Namespace:
         "--check-breach",
         "-cb",
         action="store_true",
-        help="Check if the username has been involved in a data breach, using data from HudsonRock's Cybercrime Intelligence Database",
+        help="Check if the username has been involved in a data breach, using data from HudsonRock's Cybercrime Intelligence Database.",
     )
     parser.add_argument(
         "--hibp",
@@ -151,15 +142,17 @@ def parse_arguments() -> argparse.Namespace:
         default="linkook/provider/provider.json",
         help="Force the use of the local provider.json file, add a custom path if needed. Default is 'provider.json'.",
     )
+    parser.add_argument(
+        "--groqAI",
+        metavar="API_KEY",
+        type=str,
+        default=None,
+        help="Enable AI Persona Analysis with your Groq API key."
+    )
     return parser.parse_args()
 
 
 def create_output_directory(output_dir: str):
-    """
-    Create the output directory if it doesn't exist.
-
-    :param output_dir: Path to the output directory.
-    """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         logging.info(f"Created output directory at: {output_dir}")
@@ -198,7 +191,6 @@ def show_version():
 
 
 def check_update(verbose: bool) -> bool:
-
     print(f"{Fore.CYAN}Checking for updates...{Style.RESET_ALL}", end='', flush=True)
     latest_version = check_version_from_pypi(PACKAGE_NAME)
     if latest_version is None:
@@ -212,9 +204,7 @@ def check_update(verbose: bool) -> bool:
         current_version = importlib.metadata.version(PACKAGE_NAME)
         if current_version == latest_version:
             if verbose:
-                print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
-            # else:
-                # print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}Up-to-date.{Style.RESET_ALL}")
+                print(f"{Fore.GREEN}\rYou are already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
             return False
         else:
             if verbose:
@@ -232,8 +222,6 @@ def check_update(verbose: bool) -> bool:
 
 
 def update_tool():
-    
-
     need_update = check_update(verbose=True)
 
     if not need_update:
@@ -249,13 +237,6 @@ def update_tool():
         print(f"{Fore.RED}Failed to update via pipx: {e}{Style.RESET_ALL}")
 
 def get_hibp_key():
-    """
-    Check if a HIBP API key is stored in ~/.hibp.key.
-    If the file exists, read its content and return it.
-    If it does not exist, prompt the user (with hidden input) to enter the API key,
-    then save it to ~/.hibp.key and return the key.
-    """
-
     hibp_key_path = os.path.expanduser("~/.hibp.key")
     
     if os.path.exists(hibp_key_path):
@@ -287,12 +268,6 @@ def get_hibp_key():
     return hibp_key
 
 def check_hibp_key(hibp_key: str):
-    """
-    Check if the HIBP API key is valid by making a test request to the API.
-
-    :param hibp_key: The HIBP API key.
-    :return: True if the key is valid, False otherwise.
-    """
     url = "https://haveibeenpwned.com/api/v3/subscription/status"
     headers = {
             "hibp-api-key": hibp_key,
@@ -314,12 +289,6 @@ def check_hibp_key(hibp_key: str):
     return None
 
 def handler(signal_received, frame):
-    """
-    Handle graceful exit on receiving a SIGINT (Ctrl+C).
-
-    :param signal_received: The signal number.
-    :param frame: Current stack frame.
-    """
     print(f"\n{Fore.YELLOW}Process interrupted. Exiting...{Style.RESET_ALL}")
     set_exiting()
     sys.exit(0)
@@ -330,10 +299,6 @@ def scan_queue(user, scanner, console_printer, args):
     return scanner_manager.run_scan()
 
 def main():
-    """
-    Main function to orchestrate the aggregation process.
-    """
-    # Handle Ctrl+C gracefully
     signal.signal(signal.SIGINT, handler)
 
     args = parse_arguments()
@@ -349,10 +314,8 @@ def main():
         print(f"{Fore.RED}Please provide a username to scan.{Style.RESET_ALL}")
         sys.exit(1)
 
-    # Set up logging
     setup_logging(args.debug)
 
-    # Initialize colorama for colored console output
     if not args.no_color:
         colorama_init(autoreset=True)
     else:
@@ -363,7 +326,6 @@ def main():
     else:
         force_local = True
 
-    # Initialize ConsolePrinter
     console_printer = ConsolePrinter(
         debug=args.debug,
         print_all=args.print_all,
@@ -386,7 +348,6 @@ def main():
         setCheckBreach = True
         hibp_key = get_hibp_key()
 
-    # Initialize ProviderManager
     manager = ProviderManager(
         remote_json_url="https://raw.githubusercontent.com/JackJuly/linkook/refs/heads/main/linkook/provider/provider.json",
         local_json_path=args.local,
@@ -395,14 +356,14 @@ def main():
     )
 
     try:
-        manager.load_providers()
-        logging.info(f"Loaded {len(manager.get_all_providers())} providers.")
+        all_providers = manager.load_providers()
+        logging.info(f"Loaded {len(all_providers)} providers.")
     except Exception as e:
         logging.error(f"Failed to load providers: {e}")
         sys.exit(1)
 
     scanner = SiteScanner(timeout=5, proxy=None)
-    scanner.all_providers = manager.get_all_providers()
+    scanner.all_providers = all_providers
     scanner.to_scan = manager.filter_providers(is_connected=not args.scan_all)
     scanner.check_breach = setCheckBreach
     scanner.hibp_key = hibp_key
@@ -417,30 +378,33 @@ def main():
         "found_emails": scanner.found_emails,
         "found_passwords": scanner.found_passwords,
         "breach_count": scanner.breach_count,
+        "all_providers": all_providers, # Pass all providers for context
     }
 
     if args.silent:
         args.show_summary = True
 
     console_printer.finish_all(print_content, args.show_summary)
+    
+    ai_summary_text = None
+    if args.groqAI:
+        analyzer = PersonaAnalyzer(api_key=args.groqAI)
+        ai_summary_text = analyzer.analyze_persona(print_content)
+        console_printer.print_ai_summary(ai_summary_text)
 
     if args.neo4j:
         visualizer = Neo4jVisualizer(results)
-        visualizer.all_providers = manager.get_all_providers()
+        visualizer.all_providers = all_providers
         visualizer.visualize(username=username, output_file="neo4j_export.json")
 
-    # Write results to file
     result_writer = None
     if args.output is not None:
         output_name = args.output
-        # Create output directory
         create_output_directory(output_name)
-
-        # Initialize ResultWriter
         result_writer = ResultWriter(output_name)
 
     if result_writer is not None:
-        result_writer.write_txt(username, results)
+        result_writer.write_txt(username, results, ai_summary=ai_summary_text)
 
     if args.browse:
         console_printer.browse_results(results)
