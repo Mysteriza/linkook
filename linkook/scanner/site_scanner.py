@@ -1,4 +1,4 @@
-# site_scanner.py
+# linkook/scanner/site_scanner.py
 
 import re
 import logging
@@ -9,24 +9,29 @@ from typing import Set, Dict, Any, Optional, Tuple, List
 
 class SiteScanner:
     def __init__(self, timeout: int = 10, proxy: Optional[str] = None):
-        """
-        Initialize SiteScanner with optional timeout and proxy.
-        Add data structures to track visited URLs and discovered accounts.
-        """
         self.timeout = timeout
         self.proxy = proxy
-        self.all_providers = {}  # Dictionary of all providers
-        self.to_scan = {}  # Dictionary of providers to scan
-        self.visited_urls = set()  # Set of visited URLs
-        self.found_accounts = {}  # Dictionary of found accounts
-        self.found_usernames = set()  # Set of found usernames
-        self.found_emails = set()  # Set of found emails
-        self.found_passwords = set()  # Set of found passwords
-        self.breach_count = set()  # Dictionary of breach count
-        self.check_breach = False  # Flag to check Hudson Rock breach
-        self.hibp_key = None  # HaveIBeenPwned API key
+        self.all_providers = {}
+        self.to_scan = {}
+        self.visited_urls = set()
+        self.found_accounts = {}
+        self.found_usernames = set()
+        self.found_emails = set()
+        self.found_passwords = set()
+        self.breach_count = set()
+        self.check_breach = False
+        self.hibp_key = None
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+
+    def _extract_data(self, pattern: str, text: str) -> Optional[str]:
+        if not pattern:
+            return None
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            # Mengambil grup pertama dan membersihkan spasi berlebih
+            return ' '.join(match.group(1).strip().split())
+        return None
 
     def deep_scan(self, user: str, current_provider: Provider) -> dict:
 
@@ -37,6 +42,7 @@ class SiteScanner:
             "other_usernames": set(),
             "infos": {},
             "error": None,
+            "extracted_data": {} # Untuk menyimpan data baru
         }
 
         provider = current_provider
@@ -61,6 +67,13 @@ class SiteScanner:
 
         if not check_res["found"]:
             return result
+        
+        # Ekstraksi data baru jika pola ada
+        if hasattr(provider, "extract_patterns") and provider.extract_patterns:
+            for key, pattern in provider.extract_patterns.items():
+                extracted_value = self._extract_data(pattern, html_content)
+                if extracted_value:
+                    result["extracted_data"][key] = extracted_value
 
         search_res = self.search_in_response(html_content, provider)
 
@@ -89,95 +102,61 @@ class SiteScanner:
             provider = self.all_providers.get(pname)
             if pname not in self.found_accounts:
                 self.found_accounts[pname] = set()
-            if isinstance(urls, list):
-                for url in urls:
-                    username = provider.extract_user(url).pop()
-                    url = provider.build_url(username)
-                    self.found_accounts[pname].add(url)
-            else:
-                username = provider.extract_user(url).pop()
-                url = provider.build_url(username)
-                self.found_accounts[pname].add(urls)
+            
+            url_list = urls if isinstance(urls, list) else [urls]
+            for url in url_list:
+                extracted_users = provider.extract_user(url)
+                if not extracted_users:
+                    continue
+                username = extracted_users.pop()
+                final_url = provider.build_url(username)
+                self.found_accounts[pname].add(final_url)
 
         return result
 
     def check_availability(self, status_code: int, html_content: str, current_provider: Provider) -> dict:
-        """
-        This method checks if a given username is available on a specific provider.
-        """
-
-        result: Dict[str, Any] = {
-            "found": False,
-            "error": None,
-        }
-
+        result: Dict[str, Any] = { "found": False, "error": None }
         provider = current_provider
 
-        # Check status code
-
         if status_code is None:
-            result["error"] = (
-                "Failed to retrieve the profile page (network error/timeout)."
-            )
-            result["found"] = False
-            logging.error(f"Network error while fetching URL")
+            result["error"] = "Failed to retrieve profile page (network error/timeout)."
+            logging.error(f"Network error while fetching URL for {provider.name}")
             return result
 
         if not (200 <= status_code < 400):
             result["found"] = False
-            logging.info(f"Profile not found based on status code: {status_code}")
+            logging.info(f"Profile not found for {provider.name} based on status code: {status_code}")
             return result
 
-        # Check keywords
         keyword_conf = getattr(provider, "keyword", None)
         if keyword_conf is None:
+            result["found"] = True # Jika tidak ada keyword, anggap ditemukan berdasarkan status code
+            logging.warning(f"No keyword config for {provider.name}, assuming found.")
+            return result
+
+        not_match_list = keyword_conf.get("notMatch", [])
+        if not_match_list and any(bad_kw in html_content for bad_kw in not_match_list):
             result["found"] = False
-            logging.warning(f"No keyword configuration for provider: {provider.name}")
+            logging.info(f"User not found on {provider.name} based on notMatch keywords.")
             return result
 
         match_list = keyword_conf.get("Match", [])
-        not_match_list = keyword_conf.get("notMatch", [])
+        if match_list and any(good_kw in html_content for good_kw in match_list):
+            result["found"] = True
+            logging.info(f"User found on {provider.name} based on Match keywords.")
+            return result
+        
+        # Jika hanya ada notMatch dan tidak ada yang cocok, berarti ditemukan
+        if not_match_list and not match_list:
+            result["found"] = True
+            return result
 
-        if not_match_list:
-            if any(bad_kw in html_content for bad_kw in not_match_list):
-                result["found"] = False
-                logging.info(
-                    f"User not found based on notMatch keywords for provider: {provider.name}"
-                )
-                return result
-            else:
-                result["found"] = True
-                logging.info(
-                    f"User found based on notMatch keywords for provider: {provider.name}"
-                )
-                return result
-
-        if match_list:
-            if any(good_kw in html_content for good_kw in match_list):
-                result["found"] = True
-                logging.info(
-                    f"User found based on Match keywords for provider: {provider.name}"
-                )
-                return result
-            else:
-                result["found"] = False
-                logging.info(
-                    f"User not found based on Match keywords for provider: {provider.name}"
-                )
-                return result
+        result["found"] = False
         return result
 
     def fetch_user_profile(
         self, user: str, current_provider: Provider
-    ) -> Tuple[Optional[int], Optional[str], list]:
-        """
-        Overrides the base method to return status_code, HTML content, and redirect history.
-        If an exception occurs or the request fails, returns (None, None, []).
-
-        :param user: The username to fetch.
-        :return: A tuple (status_code, html_content, redirect_history).
-        """
-
+    ) -> Tuple[Optional[int], Optional[str]]:
         provider = current_provider
         method = provider.request_method or "GET"
         headers = {
@@ -196,32 +175,17 @@ class SiteScanner:
         try:
             session = requests.Session()
             if self.proxy:
-                session.proxies = {
-                    "http": self.proxy,
-                    "https": self.proxy,
-                }
-            if method == "GET":
-                logging.info(f"Fetching URL: {url}")
-                resp = session.get(
-                    url, headers=headers, timeout=self.timeout, allow_redirects=True
-                )
-            elif method.upper() == "POST":
-                logging.info(f"Fetching URL: {url}")
-                resp = requests.post(
-                    url,
-                    json=payload,
-                    headers=headers,
-                    timeout=self.timeout,
-                    allow_redirects=True,
-                )
-            logging.info(f"Response status code: {resp.status_code}")
+                session.proxies = { "http": self.proxy, "https": self.proxy }
+            
+            resp = session.request(method, url, json=payload if method.upper() == "POST" else None, headers=headers, timeout=self.timeout, allow_redirects=True)
+            
+            logging.info(f"Response status code for {url}: {resp.status_code}")
             return resp.status_code, resp.text
         except Exception as e:
             logging.error(f"Failed to fetch profile page for URL {url}: {e}")
             return None, None
 
-    def search_in_response(self, html: str, current_provider: Provider) -> bool:
-
+    def search_in_response(self, html: str, current_provider: Provider) -> dict:
         result: Dict[str, Any] = {
             "other_links": {},
             "other_usernames": set(),
@@ -229,12 +193,11 @@ class SiteScanner:
                 "emails": {},
                 "passwords": {},
                 "breach_count": {},
-                },
+            },
         }
-
         provider = current_provider
 
-        if not provider.is_connected:
+        if not provider.is_connected and not provider.has_email:
             return result
 
         if provider.has_email:
@@ -250,58 +213,42 @@ class SiteScanner:
                             result["infos"]["breach_count"][email] = check_res[1]
                         else:
                             result["infos"]["emails"][email] = self.check_HudsonRock(email)
-                        if result["infos"]["emails"][email] == True:
+                        if result["infos"]["emails"][email]:
                             check_pass = self.check_ProxyNova(email)
-                            if check_pass is not None:
+                            if check_pass:
                                 result["infos"]["passwords"][email] = check_pass
                     else:
                         result["infos"]["emails"][email] = False
+        
+        if not provider.is_connected:
+            return result
 
         if provider.handle_regex:
-
-            for prov_name in provider.handle_regex.keys():
-                handle = provider.extract_handle(prov_name, html)
+            for prov_name, pattern in provider.handle_regex.items():
+                handle = self._extract_data(pattern, html)
                 if handle:
-                    mactch_provider = self.all_providers.get(prov_name)
-                    logging.debug(f"Matched provider: {prov_name},{mactch_provider}")
-                    if not mactch_provider:
+                    match_provider = self.all_providers.get(prov_name)
+                    if not match_provider:
                         continue
-                    if not mactch_provider.is_userid:
+                    if not match_provider.is_userid:
                         result["other_usernames"].add(handle)
-                    links = mactch_provider.build_url(handle)
+                    links = match_provider.build_url(handle)
                     result["other_links"][prov_name] = [links]
             return result
 
-        if hasattr(provider, "links") and provider.links:
-            provs_to_search = [
-                self.all_providers[name]
-                for name in provider.links
-                if name in self.all_providers
-            ]
-        else:
-            provs_to_search = [
-                p for pname, p in self.all_providers.items() if pname != provider.name
-            ]
+        provs_to_search = [p for name, p in self.all_providers.items() if name != provider.name]
 
         result["other_links"] = self.search_new_links(html, provs_to_search)
-
-        other_usernames_set = self.search_new_usernames(html, provs_to_search)
-
-        result["other_usernames"].update(other_usernames_set)
-
-
+        result["other_usernames"].update(self.search_new_usernames(html, provs_to_search))
+        
         return result
 
     def search_new_links(
         self, html: str, provider_list: List[Provider]
     ) -> Dict[str, List[str]]:
-        """
-        Search link patterns from a list of providers.
-        """
         discovered = {}
         for prov in provider_list:
             matches = prov.extract_links(html)
-            matches = matches
             if matches:
                 discovered[prov.name] = matches
         return discovered
@@ -309,13 +256,6 @@ class SiteScanner:
     def search_new_usernames(
         self, html: str, provider_list: List[Provider]
     ) -> Set[str]:
-        """
-        Extract all unique usernames from the given HTML content using the provided list of providers.
-
-        :param html: HTML content to search within.
-        :param provider_list: List of Provider instances to use for extracting usernames.
-        :return: A set of unique usernames discovered.
-        """
         discovered = set()
         for prov in provider_list:
             if prov.is_userid:
@@ -326,20 +266,13 @@ class SiteScanner:
         return discovered
 
     def search_info(self, html: str) -> Dict[str, Any]:
-        """
-        Search for related personal information in the HTML content.
-        """
         result = {"emails": set()}
-
         matches = re.findall(self.email_regex, html)
         if matches:
             result["emails"].update(matches)
         return result
 
     def check_HaveIBeenPwned(self, email: str) -> Tuple[bool, int]:
-        """
-        Check if the user's data has been leaked in the HaveIBeenPwned database.
-        """
         url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}"
         headers = {
             "hibp-api-key": self.hibp_key,
@@ -347,66 +280,37 @@ class SiteScanner:
         }
         try:
             res = requests.get(url, headers=headers, timeout=5)
+            if res.status_code == 200:
+                return True, len(res.json())
+            return False, 0
         except requests.exceptions.RequestException:
             return False, 0
-        status_code = res.status_code
-        if status_code is None:
-            return False, 0
-        if status_code == 404:
-            return False, 0
-        if status_code == 200:
-            breach_count = len(res.json())
-            return True, breach_count
-        return False, 0
 
     def check_HudsonRock(self, email: str) -> bool:
-        """
-        Check if the user's data has been leaked in the Hudson Rock database.
-        """
         url = f"https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-email?email={email}"
-        associated_string = "This email address is associated with a computer that was infected by an info-stealer, all the credentials saved on this computer are at risk of being accessed by cybercriminals. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
-        not_associated_string = "This email address is not associated with a computer infected by an info-stealer. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
         try:
             res = requests.get(url, timeout=5)
+            if res.status_code == 200 and "is associated with a computer that was infected" in res.json().get("message", ""):
+                return True
         except requests.exceptions.RequestException:
             return False
-        status_code = res.status_code
-        if status_code is None:
-            return False
-        if status_code == 404:
-            return False
-        if status_code == 200:
-            json_content = res.json()
-            if json_content["message"] == associated_string:
-                return True
-            elif json_content["message"] == not_associated_string:
-                return False
         return False
 
-    def check_ProxyNova(self, email: str) -> List[str]:
-        """
-        Check ProxyNova for leaked credentials.
-        """
+    def check_ProxyNova(self, email: str) -> Optional[List[str]]:
         url = f"https://api.proxynova.com/comb?query={email}"
         try:
             res = requests.get(url, timeout=5)
+            if res.status_code == 200:
+                lines = res.json().get("lines", [])
+                password_set = set()
+                prefix = f"{email}:"
+                for line in lines:
+                    if line.startswith(prefix):
+                        parts = line.split(":", 1)
+                        if len(parts) == 2 and parts[1].strip():
+                            password_set.add(parts[1].strip())
+                if password_set:
+                    return list(password_set)
         except requests.exceptions.RequestException:
             return None
-        if res.status_code is None or res.status_code == 404:
-            return None
-        if res.status_code == 200:
-            json_content = res.json()
-            lines = json_content.get("lines", [])
-            password_set = set()
-            prefix = f"{email}:"
-            for line in lines:
-                if line.startswith(prefix):
-                    parts = line.split(":", 1)
-                    if len(parts) == 2:
-                        pass_part = parts[1].strip()
-                        if pass_part:
-                            password_set.add(pass_part)
-            if password_set:
-                return list(password_set)
-            
         return None

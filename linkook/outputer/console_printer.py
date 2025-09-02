@@ -38,7 +38,7 @@ class ConsolePrinter:
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
 
-v1.3.0                                                     - by @JackJu1y
+v1.4.0                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
 
@@ -62,6 +62,7 @@ v1.3.0                                                     - by @JackJu1y
         other_links_flag = result.get("other_links_flag", False)
         infos = result.get("infos", {})
         hibp = result.get("hibp", None)
+        extracted_data = result.get("extracted_data", {})
         status_text = ""
 
         if self.print_all or status == "FOUND":
@@ -92,6 +93,13 @@ v1.3.0                                                     - by @JackJu1y
                 print(
                     f"{status_flag} {color}{Style.BRIGHT}{site}:{Style.RESET_ALL} {color}{profile_url}{Style.RESET_ALL}"
                 )
+            
+            # Menampilkan data yang diekstrak
+            if extracted_data and not self.concise:
+                for key, value in extracted_data.items():
+                    # Mengubah snake_case menjadi Title Case (e.g., full_name -> Full Name)
+                    formatted_key = key.replace('_', ' ').title()
+                    print(f"{formatted_key}: {Fore.WHITE}{value}{Style.RESET_ALL}")
 
             emails = infos.get("emails", {})
             breach_count = infos.get("breach_count", {})

@@ -107,7 +107,10 @@
         "keyword": {
             "notMatch": ["This page does not exist"]
         },
-        "isConnected": true
+        "isConnected": true,
+        "extract_patterns": {
+            "bio": "<p class=\"color-base-70\">(.*?)</p>"
+        }
     },
     "DeviantArt": {
         "mainUrl": "https://www.deviantart.com",
@@ -177,7 +180,13 @@
         "keyword": {
             "Match": ["followers", "following"]
         },
-        "isConnected": true
+        "isConnected": true,
+        "extract_patterns": {
+            "full_name": "<span class=\"p-name vcard-fullname d-block overflow-hidden\" itemprop=\"name\">(.*?)</span>",
+            "bio": "<div class=\"p-note user-profile-bio mb-3 js-user-profile-bio f4\">(.*?)</div>",
+            "followers": "<span class=\"text-bold color-fg-default\">(\\d+)</span>[\\s\\S]*?followers",
+            "following": "<span class=\"text-bold color-fg-default\">(\\d+)</span>[\\s\\S]*?following"
+        }
     },
     "GitLab": {
         "mainUrl": "https://gitlab.com",
@@ -259,6 +268,11 @@
         "keyword": {
             "notMatch": ["Sorry, this page isn't available.", "The link you followed may be broken, or the page may have been removed."],
             "Match": ["Followers", "Following"]
+        },
+        "extract_patterns": {
+            "full_name": "<title>(.*?)\\s\\(@",
+            "followers": "content=\"([\\d,.]+[KMB]?)\\sFollowers",
+            "following": ",\\s([\\d,.]+[KMB]?)\\sFollowing"
         }
     },
     "Kaggle": {
@@ -318,7 +332,8 @@
         "profileUrl": "https://medium.com/@^USER^",
         "keyword": {
             "notMatch": ["Out of nothing, something."]
-        }
+        },
+        "hasEmail": false
     },
     "Patreon": {
         "mainUrl": "https://www.patreon.com",
@@ -416,7 +431,8 @@
         "profileUrl": "https://soundcloud.com/^USER^",
         "keyword": {
             "notMatch": ["We can’t find that user."]
-        }
+        },
+        "hasEmail": false
     },
     "Spotify": {
         "mainUrl": "https://open.spotify.com",
@@ -504,6 +520,12 @@
         "queryUrl": "https://nitter.privacydev.net/^USER^",
         "keyword": {
             "Match": ["followers", "following"]
+        },
+        "extract_patterns": {
+            "full_name": "<a class=\"profile-card-fullname\" href=\"[^\"]*\" title=\"([^\"]*)\">",
+            "bio": "<div class=\"profile-bio\">([\\s\\S]*?)</div>",
+            "followers": "<span class=\"profile-stat-num\">([\\d,.]+)</span>[\\s\\S]*?Followers",
+            "following": "<span class=\"profile-stat-num\">([\\d,.]+)</span>[\\s\\S]*?Following"
         }
     },
     "Xing": {

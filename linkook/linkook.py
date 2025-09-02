@@ -187,7 +187,7 @@ def show_version():
             message += f", a newer version is available: {latest_version}"
             print(message)
     except importlib.metadata.PackageNotFoundError:
-        print(f"{PACKAGE_NAME} does not seem to be installed via pip/pipx.")
+        print(f"{PACKAGE_NAME} is running from source. Version check skipped.")
 
 
 def check_update(verbose: bool) -> bool:
@@ -205,6 +205,8 @@ def check_update(verbose: bool) -> bool:
         if current_version == latest_version:
             if verbose:
                 print(f"{Fore.GREEN}\rYou are already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}OK{Style.RESET_ALL}")
             return False
         else:
             if verbose:
@@ -217,7 +219,7 @@ def check_update(verbose: bool) -> bool:
             print(f"{Fore.MAGENTA}\rCannot detect current version. Attempting to upgrade anyway.{Style.RESET_ALL}")
             return True
         else:
-            print(f"{Fore.MAGENTA}\rCannot detect current version.{Style.RESET_ALL}")
+            print(f"\r{Fore.CYAN}Checking for updates...{Fore.YELLOW}Skipped (running from source){Style.RESET_ALL}")
             return False
 
 
@@ -371,6 +373,11 @@ def main():
     username = args.username
     results = scan_queue(username, scanner, console_printer, args)
 
+    extracted_data_by_platform = {}
+    for platform, result in results.items():
+        if result.get("found") and result.get("extracted_data"):
+            extracted_data_by_platform[platform] = result["extracted_data"]
+
     print_content = {
         "username": username,
         "found_accounts": scanner.found_accounts,
@@ -378,7 +385,8 @@ def main():
         "found_emails": scanner.found_emails,
         "found_passwords": scanner.found_passwords,
         "breach_count": scanner.breach_count,
-        "all_providers": all_providers, # Pass all providers for context
+        "all_providers": all_providers,
+        "extracted_data": extracted_data_by_platform
     }
 
     if args.silent:

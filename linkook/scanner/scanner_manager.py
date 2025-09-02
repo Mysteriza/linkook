@@ -6,9 +6,6 @@ import threading
 exit_event = threading.Event()
 
 def set_exiting():
-    """
-    exit the program
-    """
     exit_event.set()
 
 class ScannerManager:
@@ -21,12 +18,9 @@ class ScannerManager:
         self.num_threads = 5
         self.queue = queue.Queue()
         self.lock = threading.Lock()
-        self.processed_tasks = set() # Menambahkan set untuk melacak tugas
+        self.processed_tasks = set()
 
     def _process_provider(self, user, provider_name, other_links_flag):
-        """
-        process a provider and update the results (internal method)
-        """
         task_id = (user.lower(), provider_name)
         with self.lock:
             if task_id in self.processed_tasks:
@@ -40,26 +34,24 @@ class ScannerManager:
         if not provider:
             return
 
-        # deep scan
         scan_result = self.scanner.deep_scan(user, provider)
 
-        # print result
-        if scan_result["found"] and not self.args.silent:
-            self.console_printer.update({
-                "site_name": provider_name,
-                "status": "FOUND",
-                "profile_url": scan_result["profile_url"],
-                "other_links": scan_result.get("other_links", {}),
-                "other_links_flag": other_links_flag,
-                "infos": scan_result.get("infos", {}),
-                "hibp": self.scanner.hibp_key,
-            })
+        if scan_result["found"]:
+            with self.lock:
+                self.results[provider_name] = scan_result
+            
+            if not self.args.silent:
+                self.console_printer.update({
+                    "site_name": provider_name,
+                    "status": "FOUND",
+                    "profile_url": scan_result["profile_url"],
+                    "other_links": scan_result.get("other_links", {}),
+                    "other_links_flag": other_links_flag,
+                    "infos": scan_result.get("infos", {}),
+                    "hibp": self.scanner.hibp_key,
+                    "extracted_data": scan_result.get("extracted_data", {})
+                })
 
-        # update results
-        with self.lock:
-            self.results[provider_name] = scan_result
-        
-        # add new tasks
         other_links = scan_result.get("other_links", {})
         for linked_provider, linked_urls in other_links.items():
             linked_provider_obj = self.scanner.all_providers.get(linked_provider)
@@ -81,12 +73,8 @@ class ScannerManager:
                     self.queue.put((new_user, linked_provider, True))
 
     def _worker(self):
-        """
-        worker thread to process tasks from the queue
-        """
         while not exit_event.is_set():
             try:
-                # add a timeout to avoid blocking forever
                 user, provider, flag = self.queue.get(block=True, timeout=1)
                 try:
                     self._process_provider(user, provider, flag)
@@ -95,12 +83,9 @@ class ScannerManager:
             except queue.Empty:
                 break 
             except Exception as e:
-                print(f"Error: {e}")
+                logging.error(f"Worker error: {e}")
 
     def run_scan(self):
-        """
-        run the scan and return the results
-        """
         self.console_printer.start(self.user)
         
         for provider in self.scanner.to_scan:
