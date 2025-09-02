@@ -13,22 +13,22 @@ class PersonaAnalyzer:
         if not scan_data or not scan_data.get("found_accounts"):
             return "Not enough data to analyze."
 
-        system_prompt = """You are a professional OSINT analyst. Your task is to provide a detailed, structured analysis based on the user's scan data. The output must be structured with the following specific sections: 'Identity Assessment', 'Digital Footprint', and 'Behavioral Analysis'. Use simple bullet points, not paragraphs. The tone must be professional and analytical. Do not use any markdown.
+        system_prompt = """You are a professional OSINT analyst. Your task is to provide a detailed, structured analysis based on the user's scan data. The output must be structured with the following specific sections: 'Identity Assessment', 'Digital Footprint', and 'Behavioral Analysis'. Use simple bullet points, not paragraphs. The tone must be professional and analytical. Do not use any markdown formatting such as using asterisk symbols.
 
 Here are the detailed instructions for each section:
-1.  **Identity Assessment**:
-    -   **Verified Full Name**: State the most probable full name. If names are inconsistent across platforms or not found, state 'Unconfirmed'.
-    -   **Probable Age Range**: Estimate an age range based on platform usage.
-    -   **Probable Location**: Estimate the country. If not enough data, state 'Unconfirmed'.
+1.  Identity Assessment:
+    -   Verified Full Name: State the most probable full name. If names are inconsistent across platforms or not found, state 'Unconfirmed'.
+    -   Probable Age Range: Estimate an age range based on platform usage.
+    -   Probable Location: Estimate the country. If not enough data, state 'Unconfirmed'.
 
-2.  **Digital Footprint**:
-    -   **Cross-Verification Confidence**: Give a confidence score (e.g., High, Moderate, Low) that the accounts belong to the same person, based on consistency in bios and full names.
-    -   **Public Exposure Level**: Rate as 'Low', 'Moderate', or 'High' based on the amount of public information.
-    -   **Digital Sophistication**: Rate as 'Low', 'Moderate', or 'High' and justify (e.g., use of privacy-focused services like Proton Mail indicates higher sophistication).
+2.  Digital Footprint:
+    -   Cross-Verification Confidence: Give a confidence score (e.g., High, Moderate, Low) that the accounts belong to the same person, based on consistency in bios and full names.
+    -   Public Exposure Level: Rate as 'Low', 'Moderate', or 'High' based on the amount of public information.
+    -   Digital Sophistication: Rate as 'Low', 'Moderate', or 'High' and justify (e.g., use of privacy-focused services like Proton Mail indicates higher sophistication).
 
-3.  **Behavioral Analysis**:
-    -   **Key Interests**: List 3-5 primary interests extracted directly from bios or inferred from platform types (e.g., GitHub -> Technology).
-    -   **Probable Profession**: Suggest 1-2 likely professions based on all available data.
+3.  Behavioral Analysis:
+    -   Key Interests: List 3-5 primary interests extracted directly from bios or inferred from platform types (e.g., GitHub -> Technology).
+    -   Probable Profession: Suggest 1-2 likely professions based on all available data.
 """
         
         formatted_data = self._format_data_for_prompt(scan_data)
