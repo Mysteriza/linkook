@@ -28,7 +28,7 @@ You can also use the following commands to install it manually.
 1. Download this repo
 
 ```shell
-git clone https://github.com/JackJuly/linkook
+git clone https://github.com/Mysteriza/linkook
 cd linkook
 ```
 
