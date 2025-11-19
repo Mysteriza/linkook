@@ -1,6 +1,6 @@
 [project]
 name = "linkook"
-version = "1.1.2"
+version = "1.1.3"
 authors = [
     { name = "Jack Ju1y", email = "ju1y0x0@proton.me" },
 ]

@@ -92,7 +92,7 @@ class ScannerManager:
         async with aiohttp.ClientSession() as session:
             workers = []
             # Create workers (increase concurrency significantly compared to threads)
-            num_workers = 20 
+            num_workers = self.args.workers
             for _ in range(num_workers): 
                 task = asyncio.create_task(self._worker(session))
                 workers.append(task)
