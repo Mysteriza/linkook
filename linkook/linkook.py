@@ -23,6 +23,8 @@ from linkook.scanner.scanner_manager import ScannerManager
 
 PACKAGE_NAME = "linkook"
 
+__version__ = "1.1.3"
+
 def setup_logging(debug: bool):
     """
     Set up logging configuration.
@@ -151,6 +153,13 @@ def parse_arguments() -> argparse.Namespace:
         default="linkook/provider/provider.json",
         help="Force the use of the local provider.json file, add a custom path if needed. Default is 'provider.json'.",
     )
+    parser.add_argument(
+        "--workers",
+        "-w",
+        type=int,
+        default=30,
+        help="Number of concurrent workers for scanning. Default is 30.",
+    )
     return parser.parse_args()
 
 
@@ -177,24 +186,27 @@ def check_version_from_pypi(package_name: str) -> str:
         return None
     return None
 
-def show_version():
+def get_current_version():
     try:
-        current_version = importlib.metadata.version(PACKAGE_NAME)
-        message = f"{PACKAGE_NAME} version: {current_version}"
-        latest_version = check_version_from_pypi(PACKAGE_NAME)
-        if latest_version is None:
-            message += f", could not check for updates."
-            print(message)
-            return
-
-        if current_version == latest_version:
-            message += f", you are up-to-date."
-            print(message)
-        else:
-            message += f", a newer version is available: {latest_version}"
-            print(message)
+        return importlib.metadata.version(PACKAGE_NAME)
     except importlib.metadata.PackageNotFoundError:
-        print(f"{PACKAGE_NAME} does not seem to be installed via pip/pipx.")
+        return __version__
+
+def show_version():
+    current_version = get_current_version()
+    message = f"{PACKAGE_NAME} version: {current_version}"
+    latest_version = check_version_from_pypi(PACKAGE_NAME)
+    if latest_version is None:
+        message += f", could not check for updates."
+        print(message)
+        return
+
+    if current_version == latest_version:
+        message += f", you are up-to-date."
+        print(message)
+    else:
+        message += f", a newer version is available: {latest_version}"
+        print(message)
 
 
 def check_update(verbose: bool) -> bool:
@@ -208,27 +220,19 @@ def check_update(verbose: bool) -> bool:
             print(f"{Fore.CYAN}\rChecking for updates...{Fore.YELLOW}Error{Style.RESET_ALL}")
         return False
     
-    try:
-        current_version = importlib.metadata.version(PACKAGE_NAME)
-        if current_version == latest_version:
-            if verbose:
-                print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
-            # else:
-                # print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}Up-to-date.{Style.RESET_ALL}")
-            return False
-        else:
-            if verbose:
-                print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}{Style.RESET_ALL}{Fore.CYAN}. Updating via pipx...{Style.RESET_ALL}")
-            else:
-                print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
-            return True
-    except importlib.metadata.PackageNotFoundError:
+    current_version = get_current_version()
+    if current_version == latest_version:
         if verbose:
-            print(f"{Fore.MAGENTA}\rCannot detect current version. Attempting to upgrade anyway.{Style.RESET_ALL}")
-            return True
+            print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+        # else:
+            # print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}Up-to-date.{Style.RESET_ALL}")
+        return False
+    else:
+        if verbose:
+            print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}{Style.RESET_ALL}{Fore.CYAN}. Updating via pipx...{Style.RESET_ALL}")
         else:
-            print(f"{Fore.MAGENTA}\rCannot detect current version.{Style.RESET_ALL}")
-            return False
+            print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+        return True
 
 
 def update_tool():
