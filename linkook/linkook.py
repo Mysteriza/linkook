@@ -221,18 +221,31 @@ def check_update(verbose: bool) -> bool:
         return False
     
     current_version = get_current_version()
-    if current_version == latest_version:
-        if verbose:
-            print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
-        # else:
-            # print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}Up-to-date.{Style.RESET_ALL}")
-        return False
+    
+    # Simple version comparison
+    def parse_version(v):
+        return [int(x) for x in v.split('.')]
+
+    try:
+        curr_v = parse_version(current_version)
+        lat_v = parse_version(latest_version)
+        
+        if curr_v >= lat_v:
+             if verbose:
+                print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+             return False
+    except ValueError:
+        # Fallback for non-standard version strings
+        if current_version == latest_version:
+             if verbose:
+                print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+             return False
+
+    if verbose:
+        print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}{Style.RESET_ALL}{Fore.CYAN}. Updating via pipx...{Style.RESET_ALL}")
     else:
-        if verbose:
-            print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}{Style.RESET_ALL}{Fore.CYAN}. Updating via pipx...{Style.RESET_ALL}")
-        else:
-            print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
-        return True
+        print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+    return True
 
 
 def update_tool():
@@ -377,7 +390,7 @@ def main():
         browse=args.browse,
     )
 
-    console_printer.banner()
+    console_printer.banner(get_current_version())
 
     check_update(verbose=False)
 

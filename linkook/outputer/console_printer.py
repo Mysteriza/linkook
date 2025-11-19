@@ -46,7 +46,7 @@ class ConsolePrinter:
         self.browse = browse
         self.current_username: Optional[str] = None
 
-    def banner(self):
+    def banner(self, version: str = "Unknown"):
         """
         Print the Linkook banner.
         """
@@ -55,10 +55,9 @@ class ConsolePrinter:
 \ \ \____  \ \ \  \ \ \-.  \  \ \  _"-.  \ \ \/\ \  \ \ \/\ \  \ \  _"-.  
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
-
-v1.1.2                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
+        print(f"v{version:<58} - by @JackJu1y\n")
 
     def start(self, username: str):
         """
