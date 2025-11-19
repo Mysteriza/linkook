@@ -1,13 +1,6 @@
-import queue
-import threading
-
-exit_event = threading.Event()
-
-def set_exiting():
-    """
-    exit the program
-    """
-    exit_event.set()
+import asyncio
+import logging
+import aiohttp
 
 class ScannerManager:
     def __init__(self, user, scanner, console_printer, args):
@@ -16,23 +9,21 @@ class ScannerManager:
         self.console_printer = console_printer
         self.args = args
         self.results = {}
-        self.num_threads = 5
-        self.queue = queue.Queue()
-        self.lock = threading.Lock() 
+        self.queue = asyncio.Queue()
+        self.lock = asyncio.Lock() 
+        self.visited_tasks = set() # Track (user, provider_name) to avoid duplicates in queue
 
-    def _process_provider(self, user, provider_name, other_links_flag):
+    async def _process_provider(self, user, provider_name, other_links_flag, session):
         """
         process a provider and update the results (internal method)
         """
-        if exit_event.is_set():
-            return
         
         provider = self.scanner.all_providers.get(provider_name)
         if not provider:
             return
 
         # deep scan
-        scan_result = self.scanner.deep_scan(user, provider)
+        scan_result = await self.scanner.deep_scan(user, provider, session)
 
         # print result
         if not self.args.silent:
@@ -47,7 +38,7 @@ class ScannerManager:
             })
 
         # update results
-        with self.lock:
+        async with self.lock:
             self.results[provider_name] = scan_result
         
 
@@ -62,26 +53,31 @@ class ScannerManager:
                     continue
                 new_user = linked_provider_obj.extract_user(url).pop()
                 if new_user != user:
-                    self.queue.put((new_user, linked_provider, True))
+                    task_key = (new_user, linked_provider)
+                    if task_key not in self.visited_tasks:
+                        self.visited_tasks.add(task_key)
+                        await self.queue.put((new_user, linked_provider, True))
 
-    def _worker(self):
+    async def _worker(self, session):
         """
-        worker thread to process tasks from the queue
+        worker coroutine to process tasks from the queue
         """
-        while not exit_event.is_set():
+        while True:
             try:
-                # add a timeout to avoid blocking forever
-                user, provider, flag = self.queue.get(block=True, timeout=1)
+                # Get a "unit of work" from the queue.
+                user, provider, flag = await self.queue.get()
                 try:
-                    self._process_provider(user, provider, flag)
+                    await self._process_provider(user, provider, flag, session)
+                except Exception as e:
+                    logging.error(f"Error processing {provider}: {e}")
                 finally:
                     self.queue.task_done()
-            except queue.Empty:
-                break 
+            except asyncio.CancelledError:
+                break
             except Exception as e:
-                print(f"Error: {e}")
+                logging.error(f"Worker error: {e}")
 
-    def run_scan(self):
+    async def run_scan(self):
         """
         run the scan and return the results
         """
@@ -89,18 +85,26 @@ class ScannerManager:
         self.console_printer.start(self.user)
         
         for provider in self.scanner.to_scan:
-            self.queue.put((self.user, provider, False))
+            await self.queue.put((self.user, provider, False))
+            self.visited_tasks.add((self.user, provider))
 
-        threads = []
-        
-        for _ in range(5): 
-            t = threading.Thread(target=self._worker, daemon=True)
-            t.start()
-            threads.append(t)
+        # Create a single session for all requests
+        async with aiohttp.ClientSession() as session:
+            workers = []
+            # Create workers (increase concurrency significantly compared to threads)
+            num_workers = 20 
+            for _ in range(num_workers): 
+                task = asyncio.create_task(self._worker(session))
+                workers.append(task)
 
-        self.queue.join()
+            # Wait until the queue is fully processed.
+            await self.queue.join()
 
-        for t in threads:
-            t.join()
+            # Cancel our worker tasks.
+            for task in workers:
+                task.cancel()
+            
+            # Wait until all worker tasks are cancelled.
+            await asyncio.gather(*workers, return_exceptions=True)
 
         return self.results
