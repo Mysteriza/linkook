@@ -19,7 +19,7 @@ from linkook.outputer.console_printer import ConsolePrinter
 from linkook.outputer.visualize_output import Neo4jVisualizer
 from linkook.provider.provider_manager import ProviderManager
 from linkook.outputer.console_printer import CustomHelpFormatter
-from linkook.scanner.scanner_manager import ScannerManager, set_exiting
+from linkook.scanner.scanner_manager import ScannerManager
 
 PACKAGE_NAME = "linkook"
 
@@ -324,10 +324,11 @@ def handler(signal_received, frame):
     set_exiting()
     sys.exit(0)
 
+import asyncio
+
 def scan_queue(user, scanner, console_printer, args):
-    signal.signal(signal.SIGINT, handler)
     scanner_manager = ScannerManager(user, scanner, console_printer, args)
-    return scanner_manager.run_scan()
+    return asyncio.run(scanner_manager.run_scan())
 
 def main():
     """
@@ -401,7 +402,7 @@ def main():
         logging.error(f"Failed to load providers: {e}")
         sys.exit(1)
 
-    scanner = SiteScanner(timeout=5, proxy=None)
+    scanner = SiteScanner(timeout=10, proxy=None)
     scanner.all_providers = manager.get_all_providers()
     scanner.to_scan = manager.filter_providers(is_connected=not args.scan_all)
     scanner.check_breach = setCheckBreach
