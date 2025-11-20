@@ -12,22 +12,18 @@ from typing import Set, Dict, Any, Optional, Tuple, List
 
 class SiteScanner:
     def __init__(self, timeout: int = 10, proxy: Optional[str] = None):
-        """
-        Initialize SiteScanner with optional timeout and proxy.
-        Add data structures to track visited URLs and discovered accounts.
-        """
         self.timeout = timeout
         self.proxy = proxy
-        self.all_providers = {}  # Dictionary of all providers
-        self.to_scan = {}  # Dictionary of providers to scan
-        self.visited_urls = set()  # Set of visited URLs
-        self.found_accounts = {}  # Dictionary of found accounts
-        self.found_usernames = set()  # Set of found usernames
-        self.found_emails = set()  # Set of found emails
-        self.found_passwords = set()  # Set of found passwords
-        self.breach_count = set()  # Dictionary of breach count
-        self.check_breach = False  # Flag to check Hudson Rock breach
-        self.hibp_key = None  # HaveIBeenPwned API key
+        self.all_providers = {}
+        self.to_scan = {}
+        self.visited_urls = set()
+        self.found_accounts = {}
+        self.found_usernames = set()
+        self.found_emails = set()
+        self.found_passwords = set()
+        self.breach_count = set()
+        self.check_breach = False
+        self.hibp_key = None
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
         self.ua = UserAgent()
@@ -91,9 +87,6 @@ class SiteScanner:
         return result
 
     def check_availability(self, status_code: int, html_content: str, current_provider: Provider) -> dict:
-        """
-        This method checks if a given username is available on a specific provider.
-        """
 
         result: Dict[str, Any] = {
             "found": False,
@@ -101,8 +94,6 @@ class SiteScanner:
         }
 
         provider = current_provider
-
-        # Check status code
 
         if status_code is None:
             result["error"] = (
@@ -112,15 +103,11 @@ class SiteScanner:
             logging.error(f"Network error while fetching URL")
             return result
 
-        # Strict status code check: Only 200 OK is considered a potential match.
-        # 403 Forbidden, 404 Not Found, 500 Server Error, etc. are treated as Not Found/Error.
         if status_code != 200:
              result["found"] = False
              logging.info(f"Profile not found based on status code: {status_code}")
              return result
 
-        # Global Not Match Keywords (Generic 404/Error pages)
-        # These are checked if the provider-specific checks pass, to catch generic error pages.
         global_not_match = [
             "404 Not Found",
             "Page Not Found",
@@ -135,18 +122,16 @@ class SiteScanner:
             "This account doesn’t exist",
             "This account does not exist",
             "Account suspended",
+            "Profile isn't available The link may be broken, or the profile may have been removed."
         ]
 
-        # Check keywords
         keyword_conf = getattr(provider, "keyword", None)
         if keyword_conf is None:
-            # If no keywords defined, check global not match
             if any(bad_kw.lower() in html_content.lower() for bad_kw in global_not_match):
                 result["found"] = False
                 logging.info(f"User not found based on global notMatch keywords")
                 return result
             
-            # Fallback to status code 200
             result["found"] = True
             return result
 
@@ -161,9 +146,7 @@ class SiteScanner:
                 )
                 return result
             else:
-                # If we have match_list, we should also check it to be sure
                 if not match_list:
-                    # Check global not match before confirming
                     if any(bad_kw.lower() in html_content.lower() for bad_kw in global_not_match):
                         result["found"] = False
                         logging.info(f"User not found based on global notMatch keywords (override)")
@@ -189,25 +172,15 @@ class SiteScanner:
                 )
                 return result
         
-        # If we reached here and had not_match_list but no match_list, it returned above.
-        # If we had neither, it returned above.
         return result
 
     async def fetch_user_profile(
         self, user: str, current_provider: Provider, session: aiohttp.ClientSession
     ) -> Tuple[Optional[int], Optional[str]]:
-        """
-        Overrides the base method to return status_code, HTML content.
-        If an exception occurs or the request fails, returns (None, None).
-
-        :param user: The username to fetch.
-        :return: A tuple (status_code, html_content).
-        """
 
         provider = current_provider
         method = provider.request_method or "GET"
         
-        # Randomize User-Agent
         headers = {
             "User-Agent": self.ua.random,
         }
@@ -324,9 +297,6 @@ class SiteScanner:
     def search_new_links(
         self, html: str, provider_list: List[Provider]
     ) -> Dict[str, List[str]]:
-        """
-        Search link patterns from a list of providers.
-        """
         discovered = {}
         for prov in provider_list:
             matches = prov.extract_links(html)
@@ -338,13 +308,6 @@ class SiteScanner:
     def search_new_usernames(
         self, html: str, provider_list: List[Provider]
     ) -> Set[str]:
-        """
-        Extract all unique usernames from the given HTML content using the provided list of providers.
-
-        :param html: HTML content to search within.
-        :param provider_list: List of Provider instances to use for extracting usernames.
-        :return: A set of unique usernames discovered.
-        """
         discovered = set()
         for prov in provider_list:
             if prov.is_userid:
@@ -355,9 +318,6 @@ class SiteScanner:
         return discovered
 
     def search_info(self, html: str) -> Dict[str, Any]:
-        """
-        Search for related personal information in the HTML content.
-        """
         result = {"emails": set()}
 
         matches = re.findall(self.email_regex, html)
@@ -366,9 +326,6 @@ class SiteScanner:
         return result
 
     async def check_HaveIBeenPwned(self, email: str, session: aiohttp.ClientSession) -> Tuple[bool, int]:
-        """
-        Check if the user's data has been leaked in the HaveIBeenPwned database.
-        """
         url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}"
         headers = {
             "hibp-api-key": self.hibp_key,
@@ -388,9 +345,6 @@ class SiteScanner:
         return False, 0
 
     async def check_HudsonRock(self, email: str, session: aiohttp.ClientSession) -> bool:
-        """
-        Check if the user's data has been leaked in the Hudson Rock database.
-        """
         url = f"https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-email?email={email}"
         associated_string = "This email address is associated with a computer that was infected by an info-stealer, all the credentials saved on this computer are at risk of being accessed by cybercriminals. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
         not_associated_string = "This email address is not associated with a computer infected by an info-stealer. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
@@ -410,9 +364,6 @@ class SiteScanner:
         return False
 
     async def check_ProxyNova(self, email: str, session: aiohttp.ClientSession) -> List[str]:
-        """
-        Check ProxyNova for leaked credentials.
-        """
         url = f"https://api.proxynova.com/comb?query={email}"
         try:
             async with session.get(url, timeout=5) as res:
