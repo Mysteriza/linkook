@@ -462,6 +462,14 @@ def main():
 
     if args.browse:
         console_printer.browse_results(results)
+    elif scanner.found_accounts:
+        try:
+            print(f"\n{Fore.CYAN}Open all found links in browser? (y/n): {Style.RESET_ALL}", end='', flush=True)
+            response = input().strip().lower()
+            if response in ['y', 'yes']:
+                console_printer.browse_results(results)
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n{Fore.YELLOW}Skipped opening links.{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

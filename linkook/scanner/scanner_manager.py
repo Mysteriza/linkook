@@ -33,18 +33,26 @@ class ScannerManager:
             })
 
         async with self.lock:
-            self.results[provider_name] = scan_result
+            self.results.setdefault(provider_name, []).append(scan_result)
         
 
         other_links = scan_result.get("other_links", {})
         for linked_provider, linked_urls in other_links.items():
             linked_provider_obj = self.scanner.all_providers.get(linked_provider)
-            if not linked_provider_obj or not linked_provider_obj.is_connected:
+            if not linked_provider_obj:
                 continue
             for url in linked_urls:
                 if url in self.scanner.visited_urls:
                     continue
-                new_user = linked_provider_obj.extract_user(url).pop()
+                try:
+                    user_set = linked_provider_obj.extract_user(url)
+                    if not user_set:
+                        logging.debug(f"Could not extract username from {url}")
+                        continue
+                    new_user = user_set.pop()
+                except Exception as e:
+                    logging.error(f"Error extracting username from {url}: {e}")
+                    continue
                 if new_user != user:
                     task_key = (new_user, linked_provider)
                     if task_key not in self.visited_tasks:

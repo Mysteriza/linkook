@@ -309,10 +309,14 @@ class ConsolePrinter:
 
         :param results: A dictionary containing scan results for each site.
         """
-        for site, data in results.items():
-            if data["found"]:
-                try:
-                    webbrowser.open(data["profile_url"])
-                    logging.info(f"Opened browser for {site}: {data['profile_url']}")
-                except Exception as e:
-                    logging.error(f"Failed to open browser for {site}: {e}")
+        for site, data_list in results.items():
+            if not isinstance(data_list, list):
+                data_list = [data_list]
+            
+            for data in data_list:
+                if data["found"]:
+                    try:
+                        webbrowser.open(data["profile_url"])
+                        logging.info(f"Opened browser for {site}: {data['profile_url']}")
+                    except Exception as e:
+                        logging.error(f"Failed to open browser for {site}: {e}")

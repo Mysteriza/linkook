@@ -16,10 +16,8 @@ class Neo4jVisualizer:
         self.relationships = []
         self.node_id = 1
         self.relationship_id = 1
-        self.account_map = (
-            {}
-        )  # Tracks created SocialMediaAccount nodes to avoid duplicates
-        self.all_providers = {}  # Dictionary of all providers
+        self.account_map = {}
+        self.all_providers = {}
 
     def create_user_node(self, username: str) -> str:
         """
@@ -47,7 +45,6 @@ class Neo4jVisualizer:
         :param username: The username on the platform.
         :param profile_url: The profile URL.
         """
-        # Check if the account has already been created
         if profile_url in self.account_map:
             return self.account_map[profile_url]
 
@@ -73,7 +70,6 @@ class Neo4jVisualizer:
         :param email: The email address.
         :param is_breached: Whether the email has been breached.
         """
-        # Check if the email has already been created
         for node in self.nodes:
             if node["labels"] == ["Email"] and node["properties"]["address"] == email:
                 return node["id"]
@@ -147,62 +143,57 @@ class Neo4jVisualizer:
         user_id = self.create_user_node(username)
         username_list = [username]
 
-        for platform, data in self.result.items():
-            if not data.get("found", False):
-                continue
+        for platform, data_list in self.result.items():
+            if not isinstance(data_list, list):
+                data_list = [data_list]
+            
+            for data in data_list:
+                if not data.get("found", False):
+                    continue
 
-            profile_url = data.get("profile_url", "")
-            # Dynamically extract the username using the Provider class
-            provider = self.all_providers.get(platform)
-            if not provider.is_userid:
-                sm_username = provider.extract_user(profile_url).pop()
-            else:
-                sm_username = ""
+                profile_url = data.get("profile_url", "")
+                provider = self.all_providers.get(platform)
+                if not provider.is_userid:
+                    sm_username = provider.extract_user(profile_url).pop()
+                else:
+                    sm_username = ""
 
-            # Create SocialMediaAccount node
-            account_id = self.create_social_media_account_node(
-                platform, sm_username, profile_url
-            )
-            # Create HAS_ACCOUNT relationship
-            self.add_has_account_relationship(user_id, account_id)
+                account_id = self.create_social_media_account_node(
+                    platform, sm_username, profile_url
+                )
+                self.add_has_account_relationship(user_id, account_id)
 
-            # Process other_usernames information
-            if sm_username != "" and sm_username not in username_list:
-                username_list.append(sm_username)
-                new_userid = self.create_user_node(sm_username)
-                self.add_connected_to_relationship(user_id, new_userid)
-                self.add_connected_to_relationship(new_userid, account_id)
+                if sm_username != "" and sm_username not in username_list:
+                    username_list.append(sm_username)
+                    new_userid = self.create_user_node(sm_username)
+                    self.add_connected_to_relationship(user_id, new_userid)
+                    self.add_connected_to_relationship(new_userid, account_id)
 
-            # Process emails information
-            emails = data.get("infos", {}).get("emails", {})
-            for email, breached in emails.items():
-                email_id = self.create_email_node(email, breached)
-                self.add_has_email_relationship(user_id, email_id)
+                emails = data.get("infos", {}).get("emails", {})
+                for email, breached in emails.items():
+                    email_id = self.create_email_node(email, breached)
+                    self.add_has_email_relationship(user_id, email_id)
 
-            # Process other_links relationships
-            other_links = data.get("other_links", {})
-            for linked_platform, urls in other_links.items():
-                for url in urls:
-                    provider = self.all_providers.get(linked_platform)
-                    if not provider.is_userid:
-                        linked_username = provider.extract_user(url).pop()
-                    else:
-                        linked_username = ""
-                    # Create associated SocialMediaAccount node
-                    linked_account_id = self.create_social_media_account_node(
-                        linked_platform, linked_username, url
-                    )
-                    # Create HAS_ACCOUNT relationship
-                    self.add_has_account_relationship(user_id, linked_account_id)
-                    # Create CONNECTED_TO relationship
-                    self.add_connected_to_relationship(account_id, linked_account_id)
-                    if linked_username != "" and linked_username not in username_list:
-                        username_list.append(linked_username)
-                        new_userid = self.create_user_node(linked_username)
-                        self.add_connected_to_relationship(user_id, new_userid)
-                        self.add_connected_to_relationship(
-                            new_userid, linked_account_id
+                other_links = data.get("other_links", {})
+                for linked_platform, urls in other_links.items():
+                    for url in urls:
+                        provider = self.all_providers.get(linked_platform)
+                        if not provider.is_userid:
+                            linked_username = provider.extract_user(url).pop()
+                        else:
+                            linked_username = ""
+                        linked_account_id = self.create_social_media_account_node(
+                            linked_platform, linked_username, url
                         )
+                        self.add_has_account_relationship(user_id, linked_account_id)
+                        self.add_connected_to_relationship(account_id, linked_account_id)
+                        if linked_username != "" and linked_username not in username_list:
+                            username_list.append(linked_username)
+                            new_userid = self.create_user_node(linked_username)
+                            self.add_connected_to_relationship(user_id, new_userid)
+                            self.add_connected_to_relationship(
+                                new_userid, linked_account_id
+                            )
 
     def convert_sets(self, obj):
         """

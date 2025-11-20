@@ -41,27 +41,30 @@ class ResultWriter:
             with open(result_file, "w", encoding="utf-8") as file:
                 file.write(f"Results for username: {username}\n\n")
                 found_counter = 0
-                for site, data in results.items():
-                    status = "FOUND" if data["found"] else "NOT FOUND"
-                    file.write(f"Site: {site}\n")
-                    file.write(f"Profile URL: {data['profile_url']}\n")
-                    file.write(f"Status: {status}\n")
+                for site, data_list in results.items():
+                    if not isinstance(data_list, list):
+                        data_list = [data_list]
+                    
+                    for data in data_list:
+                        status = "FOUND" if data["found"] else "NOT FOUND"
+                        file.write(f"Site: {site}\n")
+                        file.write(f"Profile URL: {data['profile_url']}\n")
+                        file.write(f"Status: {status}\n")
 
-                    if data["found"] and "other_links" in data and data["other_links"]:
-                        file.write("Linked Accounts:\n")
-                        for provider, urls in data["other_links"].items():
-                            if isinstance(urls, list):
-                                urls_str = ", ".join(urls)
-                            else:
-                                urls_str = urls
-                            file.write(f"- {provider}: {urls_str}\n")
+                        if data["found"] and "other_links" in data and data["other_links"]:
+                            file.write("Linked Accounts:\n")
+                            for provider, urls in data["other_links"].items():
+                                if isinstance(urls, list):
+                                    urls_str = ", ".join(urls)
+                                else:
+                                    urls_str = urls
+                                file.write(f"- {provider}: {urls_str}\n")
 
-                    if data["error"]:
-                        file.write(f"Error: {data['error']}\n")
-                    file.write("\n")
-                    if data["found"]:
-                        found_counter += 1
-                # file.write(f"Total Websites Username Detected On: {found_counter}\n")
+                        if data["error"]:
+                            file.write(f"Error: {data['error']}\n")
+                        file.write("\n")
+                        if data["found"]:
+                            found_counter += 1
             print(f"\nSaved result for {username} to {result_file}")
         except Exception as e:
             logging.error(f"Failed to write TXT results for {username}: {e}")
@@ -72,7 +75,4 @@ class ResultWriter:
 
         :return: True if 'not found' results should be included, False otherwise.
         """
-        # This method can be customized based on user input or configuration.
-        # For this example, we'll assume it's controlled elsewhere.
-        # You might pass this as a parameter during initialization.
-        return True  # Placeholder implementation
+        return True

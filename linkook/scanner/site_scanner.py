@@ -24,6 +24,7 @@ class SiteScanner:
         self.breach_count = set()
         self.check_breach = False
         self.hibp_key = None
+        self.lock = asyncio.Lock()
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
         self.ua = UserAgent()
@@ -68,22 +69,24 @@ class SiteScanner:
         result["other_usernames"] = search_res["other_usernames"]
         result["infos"] = search_res["infos"]
 
-        self.found_usernames.update(result["other_usernames"])
-        if result["infos"]["emails"]:
-            found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
-            self.found_emails.update(found_email_tuple)
+        async with self.lock:
+            self.found_usernames.update(result["other_usernames"])
+            if result["infos"]["emails"]:
+                found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
+                self.found_emails.update(found_email_tuple)
 
-        if result["infos"]["passwords"]:
-            found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
-            self.found_passwords.update(found_pass_tuple)
+            if result["infos"]["passwords"]:
+                found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
+                self.found_passwords.update(found_pass_tuple)
 
-        if result["infos"]["breach_count"]:
-            breach_count_tuple = tuple((key, value) for key, value in result["infos"]["breach_count"].items())
-            self.breach_count.update(breach_count_tuple)
+            if result["infos"]["breach_count"]:
+                breach_count_tuple = tuple((key, value) for key, value in result["infos"]["breach_count"].items())
+                self.breach_count.update(breach_count_tuple)
 
-        if provider.name not in self.found_accounts:
-            self.found_accounts[provider.name] = set()
-        self.found_accounts[provider.name].add(profile_url)
+            if provider.name not in self.found_accounts:
+                self.found_accounts[provider.name] = set()
+            self.found_accounts[provider.name].add(profile_url)
+            
         return result
 
     def check_availability(self, status_code: int, html_content: str, current_provider: Provider) -> dict:
@@ -104,9 +107,9 @@ class SiteScanner:
             return result
 
         if status_code != 200:
-             result["found"] = False
-             logging.info(f"Profile not found based on status code: {status_code}")
-             return result
+            result["found"] = False
+            logging.info(f"Profile not found based on status code: {status_code}")
+            return result
 
         global_not_match = [
             "404 Not Found",
