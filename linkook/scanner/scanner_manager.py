@@ -11,21 +11,16 @@ class ScannerManager:
         self.results = {}
         self.queue = asyncio.Queue()
         self.lock = asyncio.Lock() 
-        self.visited_tasks = set() # Track (user, provider_name) to avoid duplicates in queue
+        self.visited_tasks = set()
 
     async def _process_provider(self, user, provider_name, other_links_flag, session):
-        """
-        process a provider and update the results (internal method)
-        """
         
         provider = self.scanner.all_providers.get(provider_name)
         if not provider:
             return
 
-        # deep scan
         scan_result = await self.scanner.deep_scan(user, provider, session)
 
-        # print result
         if not self.args.silent:
             self.console_printer.update({
                 "site_name": provider_name,
@@ -37,21 +32,27 @@ class ScannerManager:
                 "hibp": self.scanner.hibp_key,
             })
 
-        # update results
         async with self.lock:
-            self.results[provider_name] = scan_result
+            self.results.setdefault(provider_name, []).append(scan_result)
         
 
-        # add new tasks
         other_links = scan_result.get("other_links", {})
         for linked_provider, linked_urls in other_links.items():
             linked_provider_obj = self.scanner.all_providers.get(linked_provider)
-            if not linked_provider_obj or not linked_provider_obj.is_connected:
+            if not linked_provider_obj:
                 continue
             for url in linked_urls:
                 if url in self.scanner.visited_urls:
                     continue
-                new_user = linked_provider_obj.extract_user(url).pop()
+                try:
+                    user_set = linked_provider_obj.extract_user(url)
+                    if not user_set:
+                        logging.debug(f"Could not extract username from {url}")
+                        continue
+                    new_user = user_set.pop()
+                except Exception as e:
+                    logging.error(f"Error extracting username from {url}: {e}")
+                    continue
                 if new_user != user:
                     task_key = (new_user, linked_provider)
                     if task_key not in self.visited_tasks:
@@ -59,12 +60,8 @@ class ScannerManager:
                         await self.queue.put((new_user, linked_provider, True))
 
     async def _worker(self, session):
-        """
-        worker coroutine to process tasks from the queue
-        """
         while True:
             try:
-                # Get a "unit of work" from the queue.
                 user, provider, flag = await self.queue.get()
                 try:
                     await self._process_provider(user, provider, flag, session)
@@ -78,9 +75,6 @@ class ScannerManager:
                 logging.error(f"Worker error: {e}")
 
     async def run_scan(self):
-        """
-        run the scan and return the results
-        """
 
         self.console_printer.start(self.user)
         
@@ -88,23 +82,18 @@ class ScannerManager:
             await self.queue.put((self.user, provider, False))
             self.visited_tasks.add((self.user, provider))
 
-        # Create a single session for all requests
         async with aiohttp.ClientSession() as session:
             workers = []
-            # Create workers (increase concurrency significantly compared to threads)
             num_workers = self.args.workers
             for _ in range(num_workers): 
                 task = asyncio.create_task(self._worker(session))
                 workers.append(task)
 
-            # Wait until the queue is fully processed.
             await self.queue.join()
 
-            # Cancel our worker tasks.
             for task in workers:
                 task.cancel()
             
-            # Wait until all worker tasks are cancelled.
             await asyncio.gather(*workers, return_exceptions=True)
 
         return self.results
